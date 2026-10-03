@@ -1,7 +1,7 @@
 -- LIVE VERIFICATION GATE (read-only). Paste the ENTIRE file into the Supabase SQL editor of bfcl-hrc-dev and run it.
 -- It returns one row per check: PASS / FAIL / INFO / N/A, plus an OVERALL row. Nothing is written.
 -- GENERATED from live_gate.template.sql + security_audit.sql by scripts/validation/build-live-gate.sh - do not edit live_gate.sql by hand.
--- Expected state after migrations 0001-@@MIG_COUNT@@: @@MIG_COUNT@@ migrations, 45 tables, 4 views, 20 permissions, 0 audit violations.
+-- Expected state after migrations 0001-@@MIG_COUNT@@: @@MIG_COUNT@@ migrations, 45 tables, 5 views, 20 permissions, 0 audit violations.
 with
 audit as (
 @@AUDIT@@
@@ -13,7 +13,7 @@ fn as (
     'public.my_access()', 'public.system_health()', 'public.config_new_version(text,text,text,jsonb,text,date)',
     'public.compliance_activate_rule_version(uuid,text)', 'public.compliance_coverage(date)', 'public.compliance_create_manual_instance(uuid,uuid,date,text)',
     'public.compliance_calendar(date,date)', 'public.evidence_replace(uuid,text,text,text,bigint,text,date,text)', 'public.compliance_dashboard()',
-    'public.compliance_set_status(uuid,text,text)', 'public.exception_set_status(uuid,text,text)', 'public.alert_routing_validation()', 'app.unroutable_recipients(uuid,uuid)',
+    'public.compliance_set_status(uuid,text,text)', 'public.exception_set_status(uuid,text,text)', 'public.alert_routing_validation()', 'app.unroutable_recipients(uuid,uuid)', 'app.reconcile_future_obligations(uuid,date,text)', 'public.compliance_reconciliation_report(uuid)',
     'app.generate_compliance_instances(date,date)', 'app.run_compliance_generation(text)', 'app.detect_exceptions()', 'app.run_exception_detection(text)',
     'app.generate_alerts()', 'app.run_alert_generation(text)', 'app.job_start(text,text,text,text)', 'app.job_finish(uuid,boolean,integer,jsonb)',
     'app.next_business_id(text,date)']) f),
@@ -22,13 +22,13 @@ checks(n, check_name, expected, actual, kind) as (values
   (2,  'migration versions are exactly 20261003000001..@@MIG_COUNT@@ (no gaps, no extras)', 'match', (select case when (select versions from mig) is null then 'n/a' when (select versions from mig) = (select versions from expected_mig) then 'match' else 'MISMATCH: ' || coalesce(array_to_string((select versions from mig), ','), '') end), 'exact'),
   (3,  'security audit violations', '0', (select count(*)::text from audit), 'exact'),
   (4,  'application tables in public', '45', (select count(*)::text from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE'), 'exact'),
-  (5,  'views in public', '4', (select count(*)::text from information_schema.views where table_schema = 'public'), 'exact'),
+  (5,  'views in public', '5', (select count(*)::text from information_schema.views where table_schema = 'public'), 'exact'),
   (6,  'permissions', '20', (select count(*)::text from public.permission), 'exact'),
   (7,  'roles', '5', (select count(*)::text from public.role), 'exact'),
   (8,  'scheduled-job definitions', '7', (select count(*)::text from public.job_definition), 'exact'),
   (9,  'numbering rules', '11', (select count(*)::text from public.numbering_rule), 'exact'),
   (10, 'active alert-rule defaults', '3', (select count(*)::text from public.config_definition where kind = 'alert_rule' and status = 'active'), 'exact'),
-  (11, 'compliance + exception status definitions', '8', (select count(*)::text from public.status_definition where module in ('compliance','exception')), 'exact'),
+  (11, 'compliance + exception status definitions', '9', (select count(*)::text from public.status_definition where module in ('compliance','exception')), 'exact'),
   (12, 'RISK list values (low, medium, high, critical)', '4', (select count(*)::text from public.lov_value v join public.lov_set s on s.id = v.set_id where s.code = 'RISK' and v.is_active), 'exact'),
   (13, 'SUPER_ADMIN holds every permission', '20', (select count(*)::text from public.role_permission rp join public.role r on r.id = rp.role_id where r.code = 'SUPER_ADMIN'), 'exact'),
   (14, 'public tables without ROW LEVEL SECURITY forced', '0', (select count(*)::text from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relkind = 'r' and not c.relforcerowsecurity), 'exact'),

@@ -30,7 +30,7 @@ begin
     from public.compliance_master m join public.compliance_rule_version v on v.compliance_id = m.id and v.status = 'active', public.location l,
          (values (27, 'SAMPLE event: due in 3 days'), (30, 'SAMPLE event: due today'), (32, 'SAMPLE event: overdue by 2 days')) d(ago, note)
    where m.code = 'SAMPLE-EVENT' and l.code = 'SAMPLE-LOC-A'
-  on conflict (compliance_id, location_id, period_start) do nothing;
+  on conflict (compliance_id, location_id, period_start) where status <> 'superseded' do nothing;
   select count(*) into n1 from public.compliance_instance where compliance_id in (select id from public.compliance_master where code like 'SAMPLE-%');
   insert into _uat(step, result, detail) values
    ('1a. generator ran (job wrapper + 3-month backfill window)', case when r2 ? 'inserted' then 'PASS' else 'FAIL' end,

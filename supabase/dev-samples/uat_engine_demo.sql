@@ -66,7 +66,7 @@ begin
   insert into _demo(step, result, elapsed_ms, detail) values ('2b. generator - identical second execution creates nothing',
     case when (r ->> 'inserted')::int = 0 and inst0 = inst1 and (r ->> 'already_existing')::int = (r ->> 'applicable_obligations')::int then 'PASS' else 'FAIL' end,
     round(ms, 1), r || jsonb_build_object('obligations_before', inst0, 'obligations_after', inst1));
-  select count(*) into dups from (select 1 from public.compliance_instance group by compliance_id, location_id, period_start having count(*) > 1) d;
+  select count(*) into dups from (select 1 from public.compliance_instance where status <> 'superseded' group by compliance_id, location_id, period_start having count(*) > 1) d;
   insert into _demo(step, result, detail) values ('2c. no duplicate obligations (compliance, location, period)', case when dups = 0 then 'PASS' else 'FAIL' end, jsonb_build_object('duplicate_groups', dups));
   select count(*) into n_other from public.compliance_instance i join public.location l on l.id = i.location_id
    where l.code = 'SAMPLE-LOC-B' and i.compliance_id = (select id from public.compliance_master where code = 'SAMPLE-QUARTERLY');
@@ -80,7 +80,7 @@ begin
     from public.compliance_master m join public.compliance_rule_version v on v.compliance_id = m.id and v.status = 'active', public.location l,
          (values (27, 'SAMPLE event: due in 3 days (T-3 reminder reached today)'), (30, 'SAMPLE event: due today (T0 reminder)'), (32, 'SAMPLE event: overdue by 2 days (D+1 reminder, overdue exception)')) d(ago, note)
    where m.code = 'SAMPLE-EVENT' and l.code = 'SAMPLE-LOC-A'
-  on conflict (compliance_id, location_id, period_start) do nothing;
+  on conflict (compliance_id, location_id, period_start) where status <> 'superseded' do nothing;
   insert into _demo(step, result, detail) values ('2e. event-based SAMPLE obligations on alert offsets (due in 3 days, due today, overdue by 2)',
     case when (select count(*) from public.compliance_instance i join public.compliance_master m on m.id = i.compliance_id where m.code = 'SAMPLE-EVENT') = 3 then 'PASS' else 'FAIL' end,
     jsonb_build_object('event_obligations', (select count(*) from public.compliance_instance i join public.compliance_master m on m.id = i.compliance_id where m.code = 'SAMPLE-EVENT')));

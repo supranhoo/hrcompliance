@@ -30,7 +30,7 @@ begin
   insert into _uat(step, result, detail) values ('2b. identical second direct execution inserts nothing',
     case when (b ->> 'inserted')::int = 0 and n0 = n1 and (b ->> 'already_existing')::int = (b ->> 'applicable_obligations')::int then 'PASS' else 'FAIL' end,
     b || jsonb_build_object('obligations_before', n0, 'obligations_after', n1));
-  select count(*) into dups from (select 1 from public.compliance_instance group by compliance_id, location_id, period_start having count(*) > 1) d;
+  select count(*) into dups from (select 1 from public.compliance_instance where status <> 'superseded' group by compliance_id, location_id, period_start having count(*) > 1) d;
   insert into _uat(step, result, detail) values ('2c. no duplicate obligation keys (compliance, location, period)', case when dups = 0 then 'PASS' else 'FAIL' end, jsonb_build_object('duplicate_groups', dups));
   insert into _uat(step, result, detail) values ('2d. total obligations in the database', 'INFO', jsonb_build_object('obligations', n1));
 end $$;

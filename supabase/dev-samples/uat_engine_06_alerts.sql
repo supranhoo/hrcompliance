@@ -26,7 +26,7 @@ begin
     from public.compliance_master m join public.compliance_rule_version v on v.compliance_id = m.id and v.status = 'active', public.location l,
          (values (27, 'SAMPLE event: due in 3 days'), (30, 'SAMPLE event: due today'), (32, 'SAMPLE event: overdue by 2 days')) d(ago, note)
    where m.code = 'SAMPLE-EVENT' and l.code = 'SAMPLE-LOC-A'
-  on conflict (compliance_id, location_id, period_start) do nothing;
+  on conflict (compliance_id, location_id, period_start) where status <> 'superseded' do nothing;
   select count(*) into n0 from public.notification;
   t0 := clock_timestamp(); r := app.run_alert_generation('uat');
   if (r ->> 'ran')::boolean is not true then r := app.generate_alerts() || jsonb_build_object('note', 'wrapper already ran today; direct call used'); end if;

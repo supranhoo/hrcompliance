@@ -83,7 +83,7 @@ This baseline runs on migrations 0001-0022 as deployed. Three behaviours differ 
 |---|---|---|---|
 | Engine step `uat_engine_06` row 6a `INFO` ("NOTHING created …") | alerts with no valid recipient are dropped silently | durable UNROUTABLE exception + notification, System Health + Notification Centre; Super Admin fallback DEV only | D-001 |
 | `uat_scope_check` INFO row "coverage report lists other locations" | applicability / coverage readable regardless of scope | Applicability Matrix and coverage scope-controlled; Location Master stays global | F-1 |
-| `uat_rule_change` row "already-generated obligations keep v1" | future untouched obligations keep the old rule | future untouched (no human action) obligations are superseded to the new rule; actioned/completed stay pinned | F-2 |
+| `uat_rule_change` (after migration 0025) | F-2 implemented: rows show history keeps v1, future untouched obligations superseded + recreated under v2, actioned ones pinned | — | F-2 (fixed in 0025) |
 Anything else that is not PASS is a **new** defect: paste it verbatim, it goes into `docs/qa/DEFECT_LOG.md` unaltered, and sample data is never edited to hide it.
 
 ## Evidence capture sheet (send back, one block per script)
@@ -116,3 +116,8 @@ Automated = `npm run test:e2e` (headless Chromium, 23 checks, network intercepte
 | Responsive | e2e: mobile collapses sidebar behind a menu button; no horizontal scroll | glance on a phone-width window |
 **Minimum human visual confirmation: C6 (one status change with a reason), plus one look at the dashboard, calendar and licence badges.** Everything else is covered by SQL or CI.
 Live tile-vs-register equality (optional single query, SQL Editor): `select (select count(*) from public.v_compliance_instance where due_state='overdue') as overdue_rows;` should equal the Overdue tile.
+
+
+## Follow-up migrations 0023 (D-001), 0024 (F-1), 0025 (F-2) — live verification
+Code-complete and verified on PostgreSQL 16/17 in CI. After they deploy to `bfcl-hrc-dev`, the **only** live step is: run `supabase/tests/live_gate.sql` (expects 25 migrations, 45 tables, 5 views, 20 permissions, OVERALL PASS). Then, optionally, the single consolidated check `supabase/dev-samples/live_followup_check.sql` (read-only).
+The modular engine files 01/04/05/06 and `uat_rule_change.sql` require migration 0025 (they use the partial idempotency key).
