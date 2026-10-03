@@ -44,6 +44,8 @@ Migration headers carry rollback guidance; data-bearing migrations (Phase 5+) mu
 |---|---|---|
 | 2026-10-03 | Migrations 1–11 committed and pushed (HEAD `97bfdd3`); integration configured afterwards, so no push event had fired | git only |
 | 2026-10-03 | Documentation-only commit pushed to fire the integration's branch-update deployment | **Applied? Unknown** — verify in Supabase (Database → Migrations, and the GitHub integration's deployment status). Do not treat as applied until the validation sequence below passes |
+| 2026-10-03 | Previous trigger commit (`47a035c`) was pushed before the owner finished saving the integration settings | No Supabase deployment evidence |
+| 2026-10-03 | Owner reports integration fully saved (deploy-to-production ON, tracked branch `claude/peaceful-wozniak-gyfjaw`); fresh documentation-only commit pushed to deliver a new deployment event | **Applied? Unknown** until the validation sequence below passes |
 
 ## Post-deployment validation sequence (SQL editor, in order)
 1. `select version from supabase_migrations.schema_migrations order by 1;` → 11 rows `20261003000001` … `20261003000011`.
