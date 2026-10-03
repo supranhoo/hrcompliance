@@ -92,7 +92,7 @@ create table public.authority (
   id uuid primary key default gen_random_uuid(),
   code text not null, name text not null,
   authority_type text,              -- LOV: AUTHORITY_TYPE
-  office text, address text, contact_person text, email citext, phone text,
+  office text, address text, contact_person text, email extensions.citext, phone text,
   is_active boolean not null default true,
   created_at timestamptz not null default now(), created_by uuid,
   updated_at timestamptz not null default now(), updated_by uuid,

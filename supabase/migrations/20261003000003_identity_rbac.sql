@@ -6,7 +6,7 @@
 create table public.app_user (
   id uuid primary key default gen_random_uuid(),
   auth_user_id uuid unique,                      -- set on first successful Google login
-  email citext not null unique,
+  email extensions.citext not null unique,
   full_name text,
   status text not null default 'invited' check (status in ('invited','active','disabled')),
   scope_all boolean not null default false,      -- true = unrestricted entity/location scope
@@ -87,14 +87,14 @@ $$;
 
 -- Link a first-time Google login to a pre-provisioned app_user (matched on verified email).
 create or replace function app.link_auth_user() returns trigger
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 begin
   update public.app_user
      set auth_user_id = new.id,
          status = case when status = 'invited' then 'active' else status end,
          full_name = coalesce(full_name, new.raw_user_meta_data ->> 'full_name'),
          last_login_at = now()
-   where email = new.email::citext and auth_user_id is null;
+   where email = new.email::extensions.citext and auth_user_id is null;
   return new;
 end $$;
 create trigger on_auth_user_created after insert on auth.users

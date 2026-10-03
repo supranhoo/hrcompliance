@@ -1,7 +1,9 @@
 -- 0001 Foundation helpers: extensions, private schema, audit-stamp triggers.
 -- Rollback: drop schema app cascade; (no data at this stage).
-create extension if not exists citext;
-create extension if not exists pg_trgm;
+-- Extensions live in `extensions` (not `public`) so their functions are never exposed through the Data API.
+create schema if not exists extensions;
+create extension if not exists citext with schema extensions;
+create extension if not exists pg_trgm with schema extensions;
 
 -- `app` holds security/helper functions. It is NOT exposed through the REST API.
 create schema if not exists app;
