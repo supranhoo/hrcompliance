@@ -1,7 +1,8 @@
 -- LIVE VERIFICATION GATE (read-only). Paste the ENTIRE file into the Supabase SQL editor of bfcl-hrc-dev and run it.
 -- It returns one row per check: PASS / FAIL / INFO / N/A, plus an OVERALL row. Nothing is written.
 -- GENERATED from live_gate.template.sql + security_audit.sql by scripts/validation/build-live-gate.sh - do not edit live_gate.sql by hand.
--- Expected state after migrations 0001-31: 31 migrations, 45 tables, 5 views, 20 permissions, 0 audit violations.
+-- Expected state after migrations 0001-31: 31 migrations, 48 tables, 12 views, 22 permissions, 0 audit violations.
+-- (The counts above are the same constants the executable checks below use; they are defined once in scripts/validation/build-live-gate.sh.)
 with
 audit as (
 with t as (

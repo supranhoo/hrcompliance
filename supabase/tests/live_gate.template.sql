@@ -1,7 +1,8 @@
 -- LIVE VERIFICATION GATE (read-only). Paste the ENTIRE file into the Supabase SQL editor of bfcl-hrc-dev and run it.
 -- It returns one row per check: PASS / FAIL / INFO / N/A, plus an OVERALL row. Nothing is written.
 -- GENERATED from live_gate.template.sql + security_audit.sql by scripts/validation/build-live-gate.sh - do not edit live_gate.sql by hand.
--- Expected state after migrations 0001-@@MIG_COUNT@@: @@MIG_COUNT@@ migrations, 45 tables, 5 views, 20 permissions, 0 audit violations.
+-- Expected state after migrations 0001-@@MIG_COUNT@@: @@MIG_COUNT@@ migrations, @@EXP_TABLES@@ tables, @@EXP_VIEWS@@ views, @@EXP_PERMISSIONS@@ permissions, 0 audit violations.
+-- (The counts above are the same constants the executable checks below use; they are defined once in scripts/validation/build-live-gate.sh.)
 with
 audit as (
 @@AUDIT@@
@@ -21,9 +22,9 @@ checks(n, check_name, expected, actual, kind) as (values
   (1,  'migrations recorded as applied', '@@MIG_COUNT@@', (select coalesce(cardinality(versions)::text, 'n/a') from mig), 'exact'),
   (2,  'migration versions are exactly 20261003000001..@@MIG_COUNT@@ (no gaps, no extras)', 'match', (select case when (select versions from mig) is null then 'n/a' when (select versions from mig) = (select versions from expected_mig) then 'match' else 'MISMATCH: ' || coalesce(array_to_string((select versions from mig), ','), '') end), 'exact'),
   (3,  'security audit violations', '0', (select count(*)::text from audit), 'exact'),
-  (4,  'application tables in public', '48', (select count(*)::text from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE'), 'exact'),
-  (5,  'views in public', '12', (select count(*)::text from information_schema.views where table_schema = 'public'), 'exact'),
-  (6,  'permissions', '22', (select count(*)::text from public.permission), 'exact'),
+  (4,  'application tables in public', '@@EXP_TABLES@@', (select count(*)::text from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE'), 'exact'),
+  (5,  'views in public', '@@EXP_VIEWS@@', (select count(*)::text from information_schema.views where table_schema = 'public'), 'exact'),
+  (6,  'permissions', '@@EXP_PERMISSIONS@@', (select count(*)::text from public.permission), 'exact'),
   (7,  'roles', '5', (select count(*)::text from public.role), 'exact'),
   (8,  'scheduled-job definitions', '7', (select count(*)::text from public.job_definition), 'exact'),
   (9,  'numbering rules', '12', (select count(*)::text from public.numbering_rule), 'exact'),
