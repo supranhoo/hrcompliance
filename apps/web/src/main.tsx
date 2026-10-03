@@ -9,6 +9,7 @@ import { Layout } from './app/Layout'
 import { ToastProvider } from './app/Toasts'
 import { ErrorBoundary } from './app/ErrorBoundary'
 import { DashboardPage, LoginPage, NoAccessPage, NotFoundPage, UnauthorizedPage } from './pages/Pages'
+import { AuthCallbackPage } from './pages/AuthCallbackPage'
 import { UsersPage } from './pages/UsersPage'
 import { SystemHealthPage } from './pages/SystemHealthPage'
 
@@ -23,6 +24,7 @@ createRoot(document.getElementById('root')!).render(
             <AuthProvider>
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/auth/callback" element={<AuthCallbackPage />} />
                 <Route path="/no-access" element={<NoAccessPage />} />
                 <Route element={<RequireAuth />}>
                   <Route element={<Layout />}>

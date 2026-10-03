@@ -8,7 +8,7 @@ export and reconciliation formats only.
 | Area | State |
 |---|---|
 | DB foundation + platform + jobs (migrations 1–11) | implemented, **locally tested** on PostgreSQL 16 with a Supabase shim: 127 checks incl. negative RLS, security audit (0 violations), concurrency |
-| Web shell, UI kit, server-driven table, service contracts, Users/System Health pages | implemented, **locally tested** (typecheck, lint, 42 tests, build); not exercised against a live project |
+| Web shell, UI kit, server-driven table, service contracts, Users/System Health pages | implemented, **locally tested** (typecheck, lint, 59 tests, build); Google login flow implemented but **not tested against real Google/Supabase** (`docs/AUTH.md`); not exercised against a live project |
 | Supabase dev project `bfcl-hrc-dev` | created by owner; **migrations not applied** (needs owner action, `docs/DEPLOYMENT.md`) |
 | Google sign-in, Drive, Gmail | not configured (adapters report `NOT_CONFIGURED`) |
 | Source data audit | **blocked: no workbooks received** |

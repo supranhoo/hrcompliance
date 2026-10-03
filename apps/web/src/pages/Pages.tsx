@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../app/AuthProvider'
 import { envErrors } from '../lib/supabase'
@@ -5,14 +6,19 @@ import { Button, EmptyState } from '../components/ui'
 
 export function LoginPage() {
   const { status, signInWithGoogle } = useAuth()
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
   if (status === 'ready') return <Navigate to="/" replace />
+  if (status === 'unauthorized') return <Navigate to="/no-access" replace />
+  const start = async () => { setBusy(true); setError(null); try { await signInWithGoogle() } catch (e) { setError((e as Error).message); setBusy(false) } }
   return (
     <div className="grid h-full place-items-center p-4">
       <div className="w-full max-w-sm rounded-lg border border-line bg-white p-8 shadow-sm">
         <h1 className="text-lg font-semibold text-navy">BFCL HR Compliance &amp; Governance</h1>
         <p className="mt-1 text-sm text-muted">Sign in with your authorised Google account.</p>
         {envErrors.length > 0 && <div role="alert" className="mt-4 rounded border border-status-crit p-3 text-sm text-status-crit">Application is not configured: {envErrors.join('; ')}</div>}
-        <Button className="mt-6 w-full" disabled={envErrors.length > 0} onClick={() => void signInWithGoogle()}>Continue with Google</Button>
+        {error && <div role="alert" className="mt-4 rounded border border-status-crit p-3 text-sm text-status-crit">{error}</div>}
+        <Button className="mt-6 w-full" loading={busy} disabled={envErrors.length > 0} onClick={() => void start()}>Continue with Google</Button>
       </div>
     </div>
   )

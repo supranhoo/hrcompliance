@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Session } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabase'
+import { callbackUrl, supabase } from '../lib/supabase'
+import { rememberReturnTo } from '../lib/returnTo'
 import { parseAccess, type Access } from '../lib/access'
 
 type AuthState = {
@@ -9,6 +10,8 @@ type AuthState = {
   session: Session | null
   access: Access | null
   signInWithGoogle: () => Promise<void>
+  retryAccess: () => void
+  errorMessage: string | null
   signOut: () => Promise<void>
 }
 const Ctx = createContext<AuthState | null>(null)
@@ -43,8 +46,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthState = {
     status, session, access: accessQ.data ?? null,
     signInWithGoogle: async () => {
-      await supabase?.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })
+      rememberReturnTo(window.location.pathname + window.location.search)
+      const { error } = (await supabase?.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: callbackUrl(), queryParams: { prompt: 'select_account' } } })) ?? {}
+      if (error) throw error
     },
+    retryAccess: () => void accessQ.refetch(),
+    errorMessage: accessQ.error ? (accessQ.error as Error).message : null,
     signOut: async () => { await supabase?.auth.signOut(); qc.clear() },
   }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
