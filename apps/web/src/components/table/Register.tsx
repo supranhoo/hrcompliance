@@ -29,6 +29,8 @@ export type RegisterProps<T> = {
   quickViewTitle?: (r: T) => string
   renderQuickView?: (r: T, close: () => void) => ReactNode
   searchPlaceholder?: string
+  /** Buttons shown next to the page title (e.g. "New …"). */
+  actions?: ReactNode
 }
 
 /** Generic register: URL is the single source of filter state; every query is a server page; rows open a side-panel quick view. */
@@ -47,7 +49,7 @@ export function Register<T>(p: RegisterProps<T>) {
 
   return (
     <section className="space-y-4">
-      <h1 className="text-xl font-semibold text-navy">{p.title}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2"><h1 className="text-xl font-semibold text-navy">{p.title}</h1>{p.actions}</div>
       <SmartTable<T> id={p.id} columns={p.columns} data={t.rows} total={t.total} query={t.query} onQueryChange={t.setQuery}
         isLoading={t.isLoading} error={t.error} onRetry={() => void t.refetch()} getRowId={p.getRowId} onRowClick={p.renderQuickView ? setSelected : undefined}
         searchPlaceholder={p.searchPlaceholder}

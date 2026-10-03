@@ -41,7 +41,7 @@ function ExceptionsFor({ col, id }: { col: 'compliance_instance_id' | 'licence_i
     <ul className="space-y-2 text-sm">{rows.map((r) => <li key={r.id} className="rounded border border-line p-2"><div className="flex items-center justify-between"><Link className="font-medium text-blue hover:underline" to={`/exceptions?q=${r.exception_no}`}>{r.exception_no}</Link><span className="flex gap-1"><Badge tone={severityTone(r.severity)}>{titleCase(r.severity)}</Badge><Badge>{titleCase(r.status)}</Badge></span></div><p className="mt-1 text-muted">{r.description}</p></li>)}</ul>)}</Loading>
 }
 
-function AuditTab({ table, id }: { table: string; id: string }) {
+export function AuditTab({ table, id }: { table: string; id: string }) {
   const q = useQuery({ queryKey: ['quick', 'audit', table, id], enabled: !!supabase, queryFn: async (): Promise<AuditEntry[]> => {
     const { data, error } = await supabase!.from('audit_log').select('id,at,action,actor_id,changed_fields,reason,old_data,new_data').eq('table_name', table).eq('record_id', id).order('at', { ascending: false }).limit(50)
     if (error) throw error; return (data ?? []).map((r) => ({ ...r, actor: r.actor_id as string | null })) as AuditEntry[] } })
