@@ -5,7 +5,7 @@ import { fetchPage, sanitizeSearch } from './query'
 function mockClient(result = { data: [{ id: 1 }], error: null, count: 42 }) {
   const calls: Array<[string, unknown[]]> = []
   const chain: Record<string, unknown> = {}
-  for (const m of ['select', 'eq', 'is', 'in', 'or', 'order']) chain[m] = (...a: unknown[]) => { calls.push([m, a]); return chain }
+  for (const m of ['select', 'eq', 'is', 'in', 'or', 'order', 'gte', 'lte']) chain[m] = (...a: unknown[]) => { calls.push([m, a]); return chain }
   chain.range = vi.fn((...a: unknown[]) => { calls.push(['range', a]); return Promise.resolve(result) })
   return { client: { from: (t: string) => { calls.push(['from', [t]]); return chain } } as unknown as SupabaseClient, calls }
 }
@@ -32,6 +32,12 @@ describe('fetchPage', () => {
     expect(calls.find((c) => c[0] === 'eq' && c[1][0] === 'empty')).toBeUndefined()
     expect(calls).toContainEqual(['or', ['email.ilike.%ravi%,full_name.ilike.%ravi%']])
     expect(calls).toContainEqual(['order', ['email', { ascending: false, nullsFirst: false }]])
+  })
+  it('pushes inclusive ranges to the server and validates their column names', async () => {
+    const { client, calls } = mockClient()
+    await fetchPage(client, 'v_compliance_instance', 'id', { page: 0, pageSize: 10, ranges: { due_date: { gte: '2026-10-01', lte: '2026-10-31' } } })
+    expect(calls).toContainEqual(['gte', ['due_date', '2026-10-01']]); expect(calls).toContainEqual(['lte', ['due_date', '2026-10-31']])
+    await expect(fetchPage(client, 't', 'id', { page: 0, pageSize: 10, ranges: { 'x;y': { gte: '1' } } })).rejects.toThrow(/Invalid column/)
   })
   it('rejects injected column identifiers', async () => {
     const { client } = mockClient()

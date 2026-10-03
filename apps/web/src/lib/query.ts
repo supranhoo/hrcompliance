@@ -9,6 +9,8 @@ export type PageQuery = {
   search?: string
   searchColumns?: string[]
   filters?: Record<string, FilterValue>
+  /** Inclusive ranges, e.g. { due_date: { gte: '2026-10-01', lte: '2026-10-31' } } */
+  ranges?: Record<string, { gte?: string; lte?: string }>
 }
 export type Page<T> = { rows: T[]; total: number }
 
@@ -31,6 +33,11 @@ export async function fetchPage<T>(client: SupabaseClient, table: string, select
     if (val === null) req = req.is(col, null)
     else if (Array.isArray(val)) { if (val.length) req = req.in(col, val) }
     else req = req.eq(col, val)
+  }
+  for (const [col, r] of Object.entries(q.ranges ?? {})) {
+    assertIdent(col)
+    if (r.gte) req = req.gte(col, r.gte)
+    if (r.lte) req = req.lte(col, r.lte)
   }
   const term = sanitizeSearch(q.search ?? '')
   if (term && q.searchColumns?.length) {
