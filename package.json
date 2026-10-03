@@ -10,6 +10,7 @@
     "lint": "npm -w apps/web run lint",
     "test": "npm -w apps/web run test",
     "test:db": "scripts/validation/db-test.sh",
+    "check:frozen": "scripts/validation/check-frozen-migrations.sh",
     "validate": "npm run typecheck && npm run lint && npm run test && npm run build && npm run test:db"
   }
 }

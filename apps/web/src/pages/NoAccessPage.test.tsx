@@ -28,3 +28,11 @@ it('moves straight into the app once a profile is found', () => {
   auth.value = { ...auth.value, accessResult: 'profile' }
   renderPage(); expect(screen.getByText('home')).toBeInTheDocument()
 })
+
+it('diagnostics render nothing outside the development environment', async () => {
+  vi.resetModules(); vi.doMock('../lib/supabase', () => ({ appEnv: 'production', envErrors: [] }))
+  vi.doMock('../app/AuthProvider', () => ({ useAuth: () => auth.value }))
+  const { AccessDiagnostics } = await import('../components/AccessDiagnostics')
+  const { container } = render(<AccessDiagnostics />)
+  expect(container).toBeEmptyDOMElement()
+})

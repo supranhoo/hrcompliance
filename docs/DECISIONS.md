@@ -72,3 +72,6 @@ Defect (reproduced locally, 2026-10-03): the AFTER INSERT trigger on `auth.users
 Decision (migration 0013): `my_access()` links the caller to an unlinked `app_user` whose email equals the caller's CONFIRMED auth email. Never re-links a row that already has an `auth_user_id`, never links unconfirmed emails, never activates a disabled user; audited; idempotent. The trigger stays as a fast path.
 Frontend: the access result is never cached (`staleTime 0`, `gcTime 0`, refetch on focus), `/no-access` offers "Re-check access" (refreshes the session then re-asks the database) and a token-free diagnostics panel.
 Non-goal: an `app_user` already linked to a *different* auth identity is not taken over automatically — that needs an explicit admin action.
+
+## D-018 Authentication & access foundation FROZEN
+Owner-confirmed live (2026-10-03): Google login → Supabase session → `my_access()` → SUPER_ADMIN dashboard. Scope, evidence and change procedure: `docs/FROZEN.md`. Migrations 0001–0013 are immutable and hash-locked in CI. Diagnostics are DEV-only. Reopening requires a reproducible defect.

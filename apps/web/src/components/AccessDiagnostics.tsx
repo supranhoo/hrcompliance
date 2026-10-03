@@ -5,7 +5,14 @@ import { buildReport } from '../lib/diagnostics'
 import { Button } from './ui'
 
 /** Support panel. Shows identifiers and states only — never tokens, keys or secrets. */
+/** Rendered ONLY in the development environment. In UAT/production it renders nothing, so no identifiers are exposed in normal UI.
+ *  (A user stuck on /no-access is by definition not a SUPER_ADMIN, so the panel cannot be role-gated; the environment gate is the control.) */
 export function AccessDiagnostics() {
+  if (appEnv !== 'development') return null
+  return <AccessDiagnosticsPanel />
+}
+
+function AccessDiagnosticsPanel() {
   const { session, accessResult, errorMessage } = useAuth()
   const [copied, setCopied] = useState(false)
   const report = buildReport({

@@ -3,6 +3,7 @@
 # Usage: PGURL=postgresql://postgres@localhost:5432 scripts/validation/db-test.sh
 set -euo pipefail
 cd "$(dirname "$0")/../.."
+scripts/validation/check-frozen-migrations.sh
 BASE="${PGURL:-postgresql://postgres@localhost:5432}"
 DB="bfcl_test_$$"
 PSQL=$(command -v psql)

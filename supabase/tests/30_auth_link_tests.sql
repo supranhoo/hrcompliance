@@ -11,11 +11,23 @@ begin
 end $$;
 grant execute on function test.my_access_as(uuid) to authenticated;
 
+-- 0. Existing linked, active user: my_access must be read-only for them (no relink, no writes, no audit noise)
+create temp table _before as select row_version, updated_at, last_login_at, auth_user_id, status,
+  (select count(*) from public.audit_log where table_name='app_user') as audits from public.app_user where email='admin@bfcl.test';
+select test.eq('linked admin: profile returned', test.my_access_as((select id from auth.users where email='admin@bfcl.test')) ->> 'email', 'admin@bfcl.test');
+select test.my_access_as((select id from auth.users where email='admin@bfcl.test'));
+select test.eq('linked active user unchanged (no writes at all)',
+  (select (a.row_version, a.updated_at, a.last_login_at, a.auth_user_id, a.status) is not distinct from (b.row_version, b.updated_at, b.last_login_at, b.auth_user_id, b.status)
+     from public.app_user a, _before b where a.email='admin@bfcl.test'), true);
+select test.eq('linked active user: no audit rows written', (select count(*) from public.audit_log where table_name='app_user'), (select audits from _before));
+create temp table _users_before as select count(*) n from public.app_user;
+
 -- 1. Login BEFORE provisioning (the production order that failed)
 insert into auth.users (id, email) values ('11111111-1111-1111-1111-111111111111', 'Late.User@Bfcl.test');
 select test.eq('unprovisioned login -> {}', test.my_access_as('11111111-1111-1111-1111-111111111111'), '{}'::jsonb);
 insert into public.app_user (email, full_name) values ('late.user@bfcl.test', 'Late User');
 insert into public.user_role select u.id, r.id from public.app_user u, public.role r where u.email='late.user@bfcl.test' and r.code='SUPER_ADMIN';
+select test.eq('pre-provisioned row starts as invited', (select status from public.app_user where email='late.user@bfcl.test'), 'invited');
 select test.eq('provisioned later: row still unlinked before next call', (select auth_user_id is null from public.app_user where email='late.user@bfcl.test'), true);
 select test.eq('provisioned later: my_access self-links and returns profile', test.my_access_as('11111111-1111-1111-1111-111111111111') ->> 'email', 'late.user@bfcl.test');
 select test.eq('linked + activated', (select status || ':' || (auth_user_id = '11111111-1111-1111-1111-111111111111')::text from public.app_user where email='late.user@bfcl.test'), 'active:true');
@@ -41,7 +53,12 @@ insert into public.app_user (email, status) values ('blocked@bfcl.test', 'disabl
 select test.eq('disabled user -> {}', test.my_access_as('44444444-4444-4444-4444-444444444444'), '{}'::jsonb);
 select test.eq('disabled status unchanged', (select status from public.app_user where email='blocked@bfcl.test'), 'disabled');
 
--- 5. No JWT / unknown identity
+-- 5. Unknown / unprovisioned identities never create or alter anything
+select test.eq('unknown email never creates an app_user', (select count(*) from public.app_user) - (select n from _users_before), 4::bigint);  -- exactly the 4 rows this file inserts itself; my_access creates none
+select test.eq('stranger (no app_user) -> {}', test.my_access_as((select id from auth.users where email='stranger@gmail.com')), '{}'::jsonb);
+select test.eq('stranger still has no app_user', (select count(*) from public.app_user where email='stranger@gmail.com'), 0::bigint);
+
+-- 6. No JWT / unknown identity
 select test.eq('no auth uid -> {}', test.my_access_as(null), '{}'::jsonb);
 select test.eq('unknown auth uid -> {}', test.my_access_as('55555555-5555-5555-5555-555555555555'), '{}'::jsonb);
 \echo ALL AUTH LINK TESTS PASSED

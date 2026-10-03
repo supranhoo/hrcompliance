@@ -14,6 +14,8 @@ export and reconciliation formats only.
 | Source data audit | **blocked: no workbooks received** |
 | Compliance core, contractors, cases, comms, reports… | not started |
 
+**Frozen:** auth/access/RLS foundation, migrations 0001–0013 — see `docs/FROZEN.md`.
+
 ## Layout
 `apps/web` React+TS+Vite SPA · `supabase/migrations` ordered SQL · `supabase/seed` system seed · `supabase/tests` SQL tests ·
 `scripts/validation` test runners · `scripts/migration` source profiling/import tooling · `docs/` architecture & runbooks.
