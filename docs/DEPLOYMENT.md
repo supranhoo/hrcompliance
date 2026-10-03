@@ -56,3 +56,11 @@ Migration headers carry rollback guidance; data-bearing migrations (Phase 5+) mu
 3. `select count(*) from public.role;` → **5** · `select count(*) from public.job_definition;` → **7**.
 4. Run `supabase/seed/dev_bootstrap_admin.sql`.
 5. Sign in at `https://hrcompliance.pages.dev` with the dev admin Google account (checklist T4–T8 in `docs/AUTH.md`).
+
+## Verifying Phase 6 migrations (0014–0022) after the integration deploys them
+1. Database → Migrations lists `20261003000014` … `20261003000022` (9 new rows; 22 total).
+2. Run the **current** `supabase/tests/security_audit.sql` → 0 rows.
+3. `select count(*) from information_schema.tables where table_schema='public';` → **45** (32 foundation + 13 from Phase 6: compliance_category, compliance_master, compliance_rule_version, compliance_rule_evidence, compliance_applicability, licence_type, licence, licence_event, compliance_instance, evidence, exception, exception_action, notification).
+4. `select count(*) from public.permission;` → 20 · `select count(*) from public.config_definition where kind='alert_rule';` → 3.
+5. Optional (DEV only): run `supabase/dev-samples/sample_compliance.sql`, then open the dashboard.
+If a migration fails on the live project it is **not recorded as applied**; fix the file (it is still unapplied) and push again — do not edit migrations 0001–0013 (hash-locked).

@@ -14,11 +14,17 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      # Real-browser smoke (network intercepted, fixtures generated from the real DB). Uses the Chrome preinstalled on GitHub runners.
+      - run: CHROME_PATH="$(command -v google-chrome || command -v chromium-browser || command -v chromium)" npm run test:e2e
   database:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pg: ['16', '17']          # Supabase projects currently run PostgreSQL 17; 16 kept for parity with local development
     services:
       postgres:
-        image: postgres:16
+        image: postgres:${{ matrix.pg }}
         env: { POSTGRES_HOST_AUTH_METHOD: trust }
         ports: ['5432:5432']
         options: >-

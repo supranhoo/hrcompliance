@@ -22,3 +22,13 @@ Restrict sign-in to BFCL Workspace domain(s); file type/size enforcement in the 
 ## Key handling
 Browser: publishable key only. Never requested in chat, committed, or `VITE_`-prefixed: database password, `sb_secret_…`/legacy service_role, Google OAuth client secret, Gmail credentials. The previously exposed DB password was rotated by the owner and is not relied on.
 `system_config` rejects keys that look like secrets (secret/password/token/api_key/private/credential).
+
+## Phase 6 additions (locally tested; not yet verified on the live project)
+* Every Phase 6 table has RLS **enabled and forced**; reads need `<module>.read` **and** scope (`app.scope_ok`); a user with a read permission but **no scope sees nothing** (tested for instances, licences, evidence, exceptions, dashboard).
+* Engines (`generate_*`, `detect_exceptions`, `generate_alerts`, `run_*`) are `service_role` only; API roles cannot call them (tested).
+* `app.assign_business_id`, status enforcement, evidence file immutability, applicability/rule-version immutability and exception identity are enforced by triggers, not by the UI.
+* Evidence: MIME type and size are checked server-side against `document_type`; verification needs `evidence.verify`; uploaders cannot self-verify on insert.
+* Notifications are private (own rows only) and read-state-only mutable.
+* `system_health` / dashboard RPCs refuse unauthorised callers instead of returning empty data.
+* The security audit (`supabase/tests/security_audit.sql`) is asserted at 0 violations in CI on PostgreSQL 16 and 17.
+**Open items:** run the audit on the live project after each deployment (see DEPLOYMENT.md); `pg_cron`/Edge Function scheduling of the engines is not wired (OPERATIONS.md); file-content scanning is out of scope until Drive upload exists.

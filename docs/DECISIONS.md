@@ -75,3 +75,27 @@ Non-goal: an `app_user` already linked to a *different* auth identity is not tak
 
 ## D-018 Authentication & access foundation FROZEN
 Owner-confirmed live (2026-10-03): Google login → Supabase session → `my_access()` → SUPER_ADMIN dashboard. Scope, evidence and change procedure: `docs/FROZEN.md`. Migrations 0001–0013 are immutable and hash-locked in CI. Diagnostics are DEV-only. Reopening requires a reproducible defect.
+
+## D-019 Compliance identity vs interpretation
+`compliance_master` is identity + legal reference; `compliance_rule_version` holds everything that changes how an obligation is generated. Published versions are immutable, activation is atomic and needs a reason, and instances store the version in force at their period start. Alternative (one mutable row with history table) rejected: easy to rewrite history silently.
+
+## D-020 Applicability: specificity, fail-safe ties, no silent drops
+Highest specificity wins (location > business unit > entity > state > establishment type / industry > headcount). Equal-specificity conflicts resolve toward **applicable** and are flagged. A (compliance, location) pair with no decision is reported as **unmapped** instead of being ignored. In-effect rows cannot be rewritten (add a new row), so past periods keep the interpretation that applied then. Conditional rows use the same whitelisted rule AST; unknown facts evaluate false **and are reported** (`missing_facts`).
+
+## D-021 Idempotent generation
+`UNIQUE (compliance_id, location_id, period_start)` plus `ON CONFLICT DO NOTHING`. Window defaults: look-back 0 days, horizon 60 days (`system_config`); history arrives via the Import Centre. Daily scheduler key = date, so a second run the same day is refused and logged.
+
+## D-022 One exception model; detectors are SQL; conditions that clear auto-resolve
+Detection rules implemented: compliance overdue, evidence missing/rejected/expired, licence expired/expiring. New modules add detectors against the same table. Auto-resolution is explicit (`auto_resolved`, timeline entry, reason text). Severity is derived from risk, never typed per obligation.
+
+## D-023 Alerts notify the most recent reached offset
+Per obligation and rule only the latest reached offset inside the catch-up window is notified, so an item due today never receives a stale "due in 3 days". Defaults (T-7, T-3, due, D+1; escalation D+3, D+7 to Head HR; licences T-90…D+1) are **starting points for BFCL review**, stored as versioned `alert_rule` configuration.
+
+## D-024 Dashboard numbers are database aggregates with stated definitions
+`compliance_dashboard()` runs as the caller (RLS). Definitions are returned with the numbers. Percentages are NULL, not 0, when nothing is measurable. A caller without `compliance.read` gets an error, not zeros.
+
+## D-025 URL is the single source of register filter state; contracts are tested against real database output
+Drill-down links are plain URLs with whitelisted keys. Frontend `select` lists, filter keys and Zod schemas are verified against fixtures generated from the actual migrations (`scripts/validation/gen-fixtures.sh`). A real-browser smoke test (`npm run test:e2e`) runs against the dev server with the network intercepted by those fixtures.
+
+## D-026 Synthetic development samples live outside migrations and seeds
+`supabase/dev-samples/` (every code `SAMPLE…`) lets the owner exercise the UI in DEV before real masters exist. It is idempotent, removable, tested in CI, and never auto-applied.

@@ -48,3 +48,18 @@ seq 1 20 | xargs -P 20 -I{} "$PSQL" -qtA "$URL" -c "select should_run from app.j
 T=$(grep -c '^t$' "${TMPDIR:-/tmp}/jobs_$$.txt"); rm -f "${TMPDIR:-/tmp}/jobs_$$.txt"
 [ "$T" = "1" ] && echo "ok   - 20 concurrent job claims: exactly 1 runner" || { echo "FAIL job concurrency: runners=$T"; exit 1; }
 [ "$U" = "40" ] && [ "$M" = "GRC-2026-000040" ] && echo "ok   - 40 concurrent allocations: 40 unique, max $M" || { echo "FAIL concurrency: unique=$U max=$M"; exit 1; }
+
+# Synthetic dev samples: load -> engines produce real output -> idempotent re-load -> complete removal (separate throwaway DB).
+DB2="bfcl_sample_$$"; psql "$BASE/postgres" -c "create database $DB2"; trap 'psql "$BASE/postgres" -c "drop database if exists $DB2" >/dev/null; psql "$BASE/postgres" -c "drop database if exists $DB" >/dev/null' EXIT
+URL2="$BASE/$DB2"; psql "$URL2" -f supabase/tests/00_supabase_shim.sql >/dev/null 2>&1
+for f in supabase/migrations/*.sql; do psql "$URL2" -f "$f" >/dev/null 2>&1; done
+psql "$URL2" -f supabase/dev-samples/sample_compliance.sql >/dev/null
+Q() { "$PSQL" -qtA "$URL2" -c "$1"; }
+N1=$(Q "select count(*) from public.compliance_instance"); E1=$(Q "select count(*) from public.exception"); L1=$(Q "select count(*) from public.licence")
+psql "$URL2" -f supabase/dev-samples/sample_compliance.sql >/dev/null
+N2=$(Q "select count(*) from public.compliance_instance"); E2=$(Q "select count(*) from public.exception"); L2=$(Q "select count(*) from public.licence")
+[ "$N1" -gt 0 ] && [ "$E1" -gt 0 ] && [ "$L1" = "3" ] && [ "$N1" = "$N2" ] && [ "$E1" = "$E2" ] && [ "$L1" = "$L2" ] && echo "ok   - dev samples load idempotently ($N1 obligations, $E1 exceptions, $L1 licences)" || { echo "FAIL dev samples: $N1/$N2 $E1/$E2 $L1/$L2"; exit 1; }
+Q "select count(*) from public.compliance_instance i join public.location l on l.id=i.location_id where l.code='SAMPLE-LOC-B' and i.compliance_id=(select id from public.compliance_master where code='SAMPLE-QUARTERLY')" | grep -qx 0 && echo "ok   - samples: conditional applicability excluded the small office from the quarterly obligation" || { echo "FAIL sample applicability"; exit 1; }
+psql "$URL2" -f supabase/dev-samples/remove_samples.sql >/dev/null
+LEFT=$(Q "select (select count(*) from public.entity where code like 'SAMPLE%') + (select count(*) from public.compliance_master where code like 'SAMPLE%') + (select count(*) from public.compliance_instance) + (select count(*) from public.exception) + (select count(*) from public.licence) + (select count(*) from public.notification) + (select count(*) from public.location where code like 'SAMPLE%')")
+[ "$LEFT" = "0" ] && echo "ok   - sample removal leaves nothing behind" || { echo "FAIL sample removal left $LEFT rows"; exit 1; }
