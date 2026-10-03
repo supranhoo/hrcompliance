@@ -1,0 +1,6 @@
+# Changes to the database history and the deployment pipeline need the owner's review.
+/supabase/migrations/        @supranhoo
+/supabase/migrations.lock    @supranhoo
+/supabase/config.toml        @supranhoo
+/.github/workflows/          @supranhoo
+/scripts/validation/         @supranhoo

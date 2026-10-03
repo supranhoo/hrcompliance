@@ -1,4 +1,6 @@
-# Source Data Audit — STATUS: BLOCKED (no source files supplied)
+# Source Data Audit — STATUS: **INCOMPLETE / BLOCKED — no source files supplied**
+
+> Last checked: 2026-10-03 (end of Phase 6 build) — `/mnt/user-data/uploads`, `/mnt/attach`, `data/source/` all empty. Every section below stays marked incomplete until the workbooks are uploaded; nothing may be imported or mapped before every workbook and every worksheet (including hidden/utility sheets) has been inspected.
 
 Inspected on 2026-10-03: the repository (empty), `/mnt/user-data/uploads`, `/mnt/attach`, `/mnt/user-data/working` and a filesystem search for
 `*.xlsx|xls|xlsm|csv` — **no workbooks found**. Nothing below is derived from data; no sheet, column, formula, error or duplicate is claimed.

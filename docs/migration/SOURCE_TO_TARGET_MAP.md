@@ -1,4 +1,4 @@
-# Source → Target Data Map  (TEMPLATE — **no source files have been received**)
+# Source → Target Data Map  (**INCOMPLETE — TEMPLATE ONLY. No source files have been received; no row of this map is filled.**)
 
 Nothing below is derived from data. It defines the structure of the map that will be completed, sheet by sheet, once the workbooks are supplied
 and profiled (`python3 scripts/migration/profile_workbooks.py data/source docs/migration/profile`).

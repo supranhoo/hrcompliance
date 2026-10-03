@@ -6,7 +6,7 @@ Login, Permissions, Dashboard, Masters, Configuration, Compliance, Applicability
 ## Available now (for developer verification, not UAT)
 1. `npm run test:db` — 68 database checks. 2. `npm run validate` — web checks.
 
-## Phase 6 — Compliance core UAT script (designed; **not executed**; needs the live dev project with 0014–0022 applied)
+## Phase 6 — Compliance core UAT script. **The executable, step-by-step version is `docs/UAT_PHASE6_RUNBOOK.md`** (live gate → samples → engine demo → C1–C13). This table is the original outline (designed; **not executed**; needs the live dev project with 0014–0022 applied)
 Pre-requisite: load `supabase/dev-samples/sample_compliance.sql` (synthetic) **or** real masters; sign in as the dev SUPER_ADMIN.
 | # | Scenario | Steps | Expected |
 |---|---|---|---|

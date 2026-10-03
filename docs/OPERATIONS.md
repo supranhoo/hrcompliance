@@ -18,3 +18,7 @@ select * from public.job_run order by started_at desc limit 20;   -- observable:
 **Scheduling (not done; needs your decision/action):** enable the `pg_cron` extension (Dashboard → Database → Extensions), then e.g.
 `select cron.schedule('bfcl-compliance-gen', '15 20 * * *', $$select app.run_compliance_generation('prod')$$);` (times are UTC). Each wrapper is idempotent and logs to `job_run`; a failed run is retried by the next invocation until `max_attempts`.
 **Remove synthetic samples:** run `supabase/dev-samples/remove_samples.sql`.
+
+## Synthetic samples and live gate
+* `supabase/tests/live_gate.sql` — read-only verification after every deployment (regenerate with `scripts/validation/build-live-gate.sh` whenever `security_audit.sql` changes; CI fails if it is stale).
+* `supabase/dev-samples/*` — DEVELOPMENT ONLY synthetic data and demonstrations; they refuse to run unless `system_config environment.name = "development"`.

@@ -29,3 +29,7 @@ create or replace function public.rls_auto_enable() returns event_trigger langua
 grant execute on function public.rls_auto_enable() to authenticated;
 do $$ begin if not exists (select 1 from pg_roles where rolname='supabase_admin') then create role supabase_admin nologin; end if; end $$;
 alter default privileges for role supabase_admin in schema public grant all on tables to anon, authenticated, service_role;
+
+-- Mirror of Supabase's migration history table (the CLI/integration records each applied version here).
+create schema if not exists supabase_migrations;
+create table if not exists supabase_migrations.schema_migrations (version text primary key, statements text[], name text);

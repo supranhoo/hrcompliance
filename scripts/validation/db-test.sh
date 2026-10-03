@@ -4,6 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 scripts/validation/check-frozen-migrations.sh
+scripts/validation/build-live-gate.sh --check
 BASE="${PGURL:-postgresql://postgres@localhost:5432}"
 DB="bfcl_test_$$"
 PSQL=$(command -v psql)
@@ -13,7 +14,7 @@ psql "$BASE/postgres" -c "create database $DB"
 trap 'psql "$BASE/postgres" -c "drop database if exists $DB" >/dev/null' EXIT
 URL="$BASE/$DB"
 psql "$URL" -f supabase/tests/00_supabase_shim.sql >/dev/null
-for f in supabase/migrations/*.sql; do echo "migrate: $f"; psql "$URL" -f "$f" >/dev/null; done
+for f in supabase/migrations/*.sql; do echo "migrate: $f"; psql "$URL" -f "$f" >/dev/null; v=$(basename "$f" | cut -d_ -f1); psql "$URL" -c "insert into supabase_migrations.schema_migrations(version) values ('$v')" >/dev/null; done
 echo "seed migration: re-run for idempotency"; psql "$URL" -f "$(ls supabase/migrations/*_system_seed.sql)" >/dev/null
 run_tests() { # file marker
   OUT=$(command psql -v ON_ERROR_STOP=1 -q "$URL" -f "$1" 2>&1 || true)
@@ -51,15 +52,58 @@ T=$(grep -c '^t$' "${TMPDIR:-/tmp}/jobs_$$.txt"); rm -f "${TMPDIR:-/tmp}/jobs_$$
 
 # Synthetic dev samples: load -> engines produce real output -> idempotent re-load -> complete removal (separate throwaway DB).
 DB2="bfcl_sample_$$"; psql "$BASE/postgres" -c "create database $DB2"; trap 'psql "$BASE/postgres" -c "drop database if exists $DB2" >/dev/null; psql "$BASE/postgres" -c "drop database if exists $DB" >/dev/null' EXIT
-URL2="$BASE/$DB2"; psql "$URL2" -f supabase/tests/00_supabase_shim.sql >/dev/null 2>&1
-for f in supabase/migrations/*.sql; do psql "$URL2" -f "$f" >/dev/null 2>&1; done
+URL2="$BASE/$DB2"; Q0() { "$PSQL" -qtA "$URL2" -c "$1"; }; psql "$URL2" -f supabase/tests/00_supabase_shim.sql >/dev/null 2>&1
+for f in supabase/migrations/*.sql; do psql "$URL2" -f "$f" >/dev/null 2>&1; psql "$URL2" -c "insert into supabase_migrations.schema_migrations(version) values ('$(basename "$f" | cut -d_ -f1)')" >/dev/null; done
+# Live gate on a PRISTINE database (migrations only): every check must PASS exactly as it must on bfcl-hrc-dev.
+GATE=$("$PSQL" -qtA -F '|' "$URL2" -f supabase/tests/live_gate.sql)
+echo "$GATE" | grep -E '\|(FAIL|PASS|N/A)$' | sed 's/^/     gate: /' | tail -3
+echo "$GATE" | grep -q '|FAIL$' && { echo "FAIL live gate on pristine DB:"; echo "$GATE" | grep '|FAIL$'; exit 1; }
+echo "$GATE" | grep -q '^99|OVERALL|no FAIL|0 FAIL, 19 PASS, 0 N/A|PASS$' && echo "ok   - live gate passes on a pristine database (22 migrations, 45 tables, 20 permissions, audit 0)" || { echo "FAIL live gate overall:"; echo "$GATE" | tail -3; exit 1; }
+# environment guard: samples must be REFUSED when the database is unlabelled or labelled production
+GUARD1=$("$PSQL" -q "$URL2" -f supabase/dev-samples/sample_compliance.sql 2>&1 | grep -c "REFUSED" || true)
+psql "$URL2" -c "insert into public.system_config(key,value) values ('environment.name','\"production\"')" >/dev/null
+GUARD2=$("$PSQL" -q "$URL2" -f supabase/dev-samples/sample_compliance.sql 2>&1 | grep -c "REFUSED" || true)
+GUARD3=$("$PSQL" -q "$URL2" -f supabase/dev-samples/uat_engine_demo.sql 2>&1 | grep -c "REFUSED" || true)
+[ "$GUARD1" -ge 1 ] && [ "$GUARD2" -ge 1 ] && [ "$GUARD3" -ge 1 ] && [ "$(Q0 "select count(*) from public.compliance_master")" = "0" ] && echo "ok   - sample/demo scripts REFUSE to run when unlabelled or labelled production (nothing was written)" || { echo "FAIL environment guard ($GUARD1/$GUARD2/$GUARD3)"; exit 1; }
+psql "$URL2" -c "update public.system_config set value='\"development\"' where key='environment.name'" >/dev/null
+# emulate the live dev project: the bootstrap admin exists and has signed in (active)
+psql "$URL2" -f supabase/seed/dev_bootstrap_admin.sql >/dev/null; psql "$URL2" -c "update public.app_user set status='active'" >/dev/null
 psql "$URL2" -f supabase/dev-samples/sample_compliance.sql >/dev/null
 Q() { "$PSQL" -qtA "$URL2" -c "$1"; }
-N1=$(Q "select count(*) from public.compliance_instance"); E1=$(Q "select count(*) from public.exception"); L1=$(Q "select count(*) from public.licence")
+[ "$(Q "select count(*) from public.compliance_instance")" = "0" ] && echo "ok   - sample load is data-only: no obligations until the engines run" || { echo "FAIL sample load ran engines"; exit 1; }
+M1=$(Q "select count(*) from public.compliance_master"); L1=$(Q "select count(*) from public.licence"); R1=$(Q "select count(*) from public.compliance_rule_version")
 psql "$URL2" -f supabase/dev-samples/sample_compliance.sql >/dev/null
-N2=$(Q "select count(*) from public.compliance_instance"); E2=$(Q "select count(*) from public.exception"); L2=$(Q "select count(*) from public.licence")
-[ "$N1" -gt 0 ] && [ "$E1" -gt 0 ] && [ "$L1" = "3" ] && [ "$N1" = "$N2" ] && [ "$E1" = "$E2" ] && [ "$L1" = "$L2" ] && echo "ok   - dev samples load idempotently ($N1 obligations, $E1 exceptions, $L1 licences)" || { echo "FAIL dev samples: $N1/$N2 $E1/$E2 $L1/$L2"; exit 1; }
+M2=$(Q "select count(*) from public.compliance_master"); L2=$(Q "select count(*) from public.licence"); R2=$(Q "select count(*) from public.compliance_rule_version")
+[ "$M1" = "$M2" ] && [ "$L1" = "$L2" ] && [ "$R1" = "$R2" ] && [ "$L1" = "3" ] && echo "ok   - sample load is idempotent ($M1 masters, $R1 rule versions, $L1 licences; second load changed nothing)" || { echo "FAIL sample idempotency $M1/$M2 $L1/$L2 $R1/$R2"; exit 1; }
+DEMO=$("$PSQL" -qtA -F '|' "$URL2" -f supabase/dev-samples/uat_engine_demo.sql 2>&1)
+echo "$DEMO" | grep -E '^[0-9]+\|' | awk -F'|' '{printf "     demo: %-92s %s  %s ms\n", substr($2,1,92), $3, $4}'
+echo "$DEMO" | grep -q 'ERROR' && { echo "FAIL demo script error:"; echo "$DEMO" | grep ERROR; exit 1; }
+echo "$DEMO" | grep -qE '^[0-9]+\|[^|]*\|FAIL\|' && { echo "FAIL engine demo has FAIL rows"; exit 1; }
+echo "$DEMO" | grep -qE '^[0-9]+\|7\. OVERALL\|PASS\|' && echo "ok   - live engine demo script: all steps PASS on synthetic data" || { echo "FAIL engine demo overall"; exit 1; }
+SC=$("$PSQL" -qtA -F '|' "$URL2" -f supabase/dev-samples/uat_scope_check.sql 2>&1)
+echo "$SC" | grep -E '^[0-9]+\|' | awk -F'|' '{printf "     scope: %-78s %s\n", substr($2,1,78), $5}'
+echo "$SC" | grep -q 'ERROR' && { echo "FAIL scope script error:"; echo "$SC" | grep ERROR; exit 1; }
+echo "$SC" | grep -qE '\|FAIL$' && { echo "FAIL scope check has FAIL rows"; exit 1; }
+echo "$SC" | grep -qE '^[0-9]+\|OVERALL\|.*\|PASS$' && echo "ok   - scope check as a synthetic single-location user: nothing leaks across locations" || { echo "FAIL scope overall"; exit 1; }
+psql "$URL2" -f supabase/dev-samples/uat_evidence_fixture.sql >/dev/null 2>&1
+ST=$(Q "select string_agg(evidence_state, ',' order by evidence_state) from (select distinct evidence_state from public.v_evidence_requirement) x")
+[ "$ST" = "expired,missing,pending_review,rejected,verified" ] && echo "ok   - evidence fixture makes all five evidence states visible ($ST)" || { echo "FAIL evidence states: $ST"; exit 1; }
+EV1=$(Q "select count(*) from public.evidence"); psql "$URL2" -f supabase/dev-samples/uat_evidence_fixture.sql >/dev/null 2>&1; [ "$EV1" = "$(Q "select count(*) from public.evidence")" ] && echo "ok   - evidence fixture is idempotent" || { echo "FAIL evidence fixture not idempotent"; exit 1; }
+psql "$URL2" -f supabase/dev-samples/uat_backdate_exception.sql >/dev/null 2>&1
+AG=$(Q "select string_agg(age_bucket, ',' order by age_bucket) from (select distinct age_bucket from public.v_exception where status in ('open','acknowledged')) x")
+echo "$AG" | grep -q "31-90" && echo "$AG" | grep -q "90+" && echo "$AG" | grep -q "8-30" && echo "ok   - ageing fixture produces the older buckets ($AG)" || { echo "FAIL ageing buckets: $AG"; exit 1; }
+[ "$(Q "select count(*) from pg_trigger where tgrelid='public.exception'::regclass and tgname='exception_guard' and tgenabled='O'")" = "1" ] && echo "ok   - exception identity guard is enabled again after the ageing fixture" || { echo "FAIL guard left disabled"; exit 1; }
+# rule-change demo needs a signed-in (linked) dev admin, as on the live project
+psql "$URL2" -c "update public.app_user set auth_user_id='7b7b7b7b-0000-4000-8000-000000000002' where email='vivek.dansena08@gmail.com'" >/dev/null
+RC=$("$PSQL" -qtA -F '|' "$URL2" -f supabase/dev-samples/uat_rule_change.sql 2>&1)
+echo "$RC" | grep -E '^[0-9]+\|' | awk -F'|' '{printf "     rule: %-70s %s\n", substr($2,1,70), $3}'
+echo "$RC" | grep -q 'ERROR' && { echo "FAIL rule-change script error:"; echo "$RC" | grep ERROR; exit 1; }
+echo "$RC" | grep -qE '\|FAIL\|' && { echo "FAIL rule-change has FAIL rows"; exit 1; }
+echo "$RC" | grep -qE '\|PASS\|' && echo "ok   - rule change via the permission-checked function: v1 retired, old obligations untouched, new period uses v2" || { echo "FAIL rule change"; exit 1; }
+N1=$(Q "select count(*) from public.compliance_instance"); E1=$(Q "select count(*) from public.exception"); NT1=$(Q "select count(*) from public.notification")
+psql "$URL2" -f supabase/dev-samples/uat_engine_demo.sql >/dev/null 2>&1
+[ "$N1" = "$(Q "select count(*) from public.compliance_instance")" ] && [ "$E1" -le "$(Q "select count(*) from public.exception")" ] && echo "ok   - re-running the demo creates no duplicate obligations" || { echo "FAIL demo rerun changed obligations"; exit 1; }
 Q "select count(*) from public.compliance_instance i join public.location l on l.id=i.location_id where l.code='SAMPLE-LOC-B' and i.compliance_id=(select id from public.compliance_master where code='SAMPLE-QUARTERLY')" | grep -qx 0 && echo "ok   - samples: conditional applicability excluded the small office from the quarterly obligation" || { echo "FAIL sample applicability"; exit 1; }
 psql "$URL2" -f supabase/dev-samples/remove_samples.sql >/dev/null
-LEFT=$(Q "select (select count(*) from public.entity where code like 'SAMPLE%') + (select count(*) from public.compliance_master where code like 'SAMPLE%') + (select count(*) from public.compliance_instance) + (select count(*) from public.exception) + (select count(*) from public.licence) + (select count(*) from public.notification) + (select count(*) from public.location where code like 'SAMPLE%')")
+LEFT=$(Q "select (select count(*) from public.entity where code like 'SAMPLE%') + (select count(*) from public.compliance_master where code like 'SAMPLE%') + (select count(*) from public.compliance_instance) + (select count(*) from public.exception) + (select count(*) from public.licence) + (select count(*) from public.notification) + (select count(*) from public.location where code like 'SAMPLE%') + (select count(*) from public.evidence) + (select count(*) from public.app_user where email like 'sample.%@example.invalid') + (select count(*) from public.user_scope s join public.app_user u on u.id=s.user_id where u.email like 'sample.%')")
 [ "$LEFT" = "0" ] && echo "ok   - sample removal leaves nothing behind" || { echo "FAIL sample removal left $LEFT rows"; exit 1; }

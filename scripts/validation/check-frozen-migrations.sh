@@ -20,5 +20,14 @@ for f in supabase/migrations/*.sql; do
   v=$(basename "$f" | cut -d_ -f1)
   if [ "$v" -le "$MAX" ] && ! grep -q " $f\$" "$LOCK"; then echo "NEW MIGRATION INSIDE FROZEN RANGE: $f"; bad=1; fi
 done
+# Lint for migrations ABOVE the frozen range (new or not yet live-verified): naming, rollback note, no destructive statements without a marker.
+for f in supabase/migrations/*.sql; do
+  b=$(basename "$f"); v=$(echo "$b" | cut -d_ -f1)
+  [ "$v" -le "$MAX" ] && continue
+  echo "$b" | grep -Eq '^[0-9]{14}_[a-z0-9_]+\.sql$' || { echo "MIGRATION NAME must be <14-digit version>_snake_case.sql: $b"; bad=1; }
+  grep -q '^-- Rollback:' "$f" || { echo "MIGRATION MISSING ROLLBACK NOTE (a line starting with '-- Rollback:'): $b"; bad=1; }
+  # temp/scratch tables (name starts with an underscore, e.g. _det) are not schema
+  if grep -Ei '^[[:space:]]*(drop[[:space:]]+(table|schema|column)|truncate)' "$f" | grep -Eiv 'drop[[:space:]]+table[[:space:]]+(if[[:space:]]+exists[[:space:]]+)?_' | grep -q . && ! grep -q 'destructive-ok' "$f"; then echo "DESTRUCTIVE STATEMENT without a '-- destructive-ok: <reason>' marker: $b"; bad=1; fi
+done
 [ "$bad" = 0 ] && echo "ok   - frozen migrations intact ($(wc -l < "$LOCK") files, up to $MAX)"
 exit $bad
