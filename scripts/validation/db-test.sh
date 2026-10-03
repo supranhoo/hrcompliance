@@ -100,6 +100,7 @@ echo "$RC" | grep -E '^[0-9]+\|' | awk -F'|' '{printf "     rule: %-70s %s\n", s
 echo "$RC" | grep -q 'ERROR' && { echo "FAIL rule-change script error:"; echo "$RC" | grep ERROR; exit 1; }
 echo "$RC" | grep -qE '\|FAIL\|' && { echo "FAIL rule-change has FAIL rows"; exit 1; }
 echo "$RC" | grep -qE '\|PASS\|' && echo "ok   - rule change via the permission-checked function: v1 retired, old obligations untouched, new period uses v2" || { echo "FAIL rule change"; exit 1; }
+scripts/validation/uat-modular-test.sh "$URL2" || exit 1
 N1=$(Q "select count(*) from public.compliance_instance"); E1=$(Q "select count(*) from public.exception"); NT1=$(Q "select count(*) from public.notification")
 psql "$URL2" -f supabase/dev-samples/uat_engine_demo.sql >/dev/null 2>&1
 [ "$N1" = "$(Q "select count(*) from public.compliance_instance")" ] && [ "$E1" -le "$(Q "select count(*) from public.exception")" ] && echo "ok   - re-running the demo creates no duplicate obligations" || { echo "FAIL demo rerun changed obligations"; exit 1; }

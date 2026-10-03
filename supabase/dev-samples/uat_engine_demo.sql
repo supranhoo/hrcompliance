@@ -1,3 +1,4 @@
+-- ENGINEERING / CLI USE (psql). For the live Supabase SQL Editor use the small modular runner uat_engine_01..08 instead (see docs/UAT_PHASE6_RUNBOOK.md): this file is one large DO block that the editor paste can truncate.
 -- LIVE ENGINE DEMONSTRATION (DEVELOPMENT ONLY). Run AFTER sample_compliance.sql, as postgres, in the SQL editor of bfcl-hrc-dev.
 -- Runs the generator, exception detector and alert engine step by step, records elapsed time and affected-row counts, and prints one
 -- result table at the end. It changes only synthetic SAMPLE obligations (it completes one overdue SAMPLE obligation to show auto-resolution).

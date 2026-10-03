@@ -15,3 +15,5 @@ calendar, exceptions and alerts can be exercised in the DEVELOPMENT project befo
 
 
 **Always run each script as the complete file in one execution.** Running a highlighted fragment in the SQL editor breaks PL/pgSQL (`syntax error at or near ","` from `select ... into a, b` outside a `DO` block) and loses the session temp table. Paste the whole file into an empty tab.
+
+**Live UAT uses the modular runner** `uat_engine_01_generator.sql` … `uat_engine_08_overall.sql` (each small, independent, DEVELOPMENT-guarded, ends with `-- END OF FILE`). `uat_engine_demo.sql` is the single large script kept for CLI/engineering use; the SQL Editor can truncate it.

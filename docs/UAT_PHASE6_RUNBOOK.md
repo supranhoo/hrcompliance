@@ -20,19 +20,24 @@ on conflict (key) do update set value = excluded.value;
 What it creates (all codes start `SAMPLE`): entity `SAMPLE-ENT`; locations `SAMPLE-LOC-A` (plant, 120 employees) and `SAMPLE-LOC-B` (office, 15); three compliances (monthly with mandatory evidence, quarterly applicable only where 50+ employees, event-based 30 days); three licences (expired, expiring in 15 days, valid); default owner = you.
 
 ## Part 2 — Engines, step by step (this is the "prove it before scheduling" gate)
-Run `supabase/dev-samples/uat_engine_demo.sql` **as the complete file in one execution** (open the file, copy ALL of it, paste into an empty SQL-editor tab, press Run; never run a highlighted fragment — a fragment fails with `syntax error at or near ","` because the PL/pgSQL `DO` blocks and the temp table only work as a whole). Expect ~17 rows, every `result` = PASS (INFO rows must explain themselves), last row `7. OVERALL … PASS`.
-Record for each engine: **elapsed_ms** and the row counts in `detail`:
-| Row | What it proves |
-|---|---|
-| 1 | first generator execution: obligations created (counts before/after) |
-| 2a | second call the same day is refused by the job guard |
-| 2b | identical execution inserts **0**, `already_existing = applicable_obligations` |
-| 2c / 2d | no duplicate obligations; the 50+ employee rule kept the small office out of the quarterly obligation |
-| 3 / 3b / 3c | first exception detection; identical second detection raises **0**; at most one active exception per key |
-| 4 | an overdue obligation is completed → its exception **auto-resolves** (flag, resolution text, timeline entry) and a **new** `evidence_missing` exception appears (monthly obligations require evidence) |
-| 5 / 5b / 5c / 5d | first alert generation; identical repeat creates **0**; no duplicate keys; completed obligations never alert |
-| 6 | the three job runs with duration, attempts, records |
-Then run it **again**: every PASS stays PASS, nothing duplicates. (If row 5 is INFO, read its `note` — see defect D-001.)
+**Why 8 small files:** the Supabase SQL Editor can cut off a large pasted `DO $$ … $$` block (error `unterminated dollar-quoted string`). The engine demo is therefore split into eight small, independent files. Each is under 7 KB, has its own DEVELOPMENT guard, creates its own short-lived result table, prints one small PASS/FAIL/INFO table, and ends with the line `-- END OF FILE`.
+
+**For EVERY file below:** open a **new, empty** SQL tab → copy the **whole** file (GitHub → file → Raw → select all → copy) → paste → check the last visible line is `-- END OF FILE` (if not, the paste was cut: clear the tab and paste again) → press **Run once**. Never run a highlighted fragment. Send me the result table (or a screenshot) for each file.
+
+| Order | File | What it proves | Expected |
+|---|---|---|---|
+| 1 | `uat_engine_01_generator.sql` | generator first run creates obligations; the 3 event-based SAMPLE obligations exist | 1a–1c PASS (1b INFO only if already generated) |
+| 2 | `uat_engine_02_idempotency.sql` | second same-day wrapper call refused; identical direct run inserts 0; no duplicate keys | 2a–2c PASS, 2d INFO (count) |
+| 3 | `uat_engine_03_applicability.sql` | quarterly exists at LOC-A, none at LOC-B (15 employees < 50); coverage = not_applicable | 3a–3d PASS |
+| 4 | `uat_engine_04_exceptions.sql` | exceptions raised; identical second detection raises 0; one active exception per key; overdue exception exists | 4a–4d PASS (4a INFO on re-runs) |
+| 5 | `uat_engine_05_auto_resolution.sql` | completes one overdue SAMPLE obligation → its exception auto-resolves; monthly completed without evidence raises `evidence_missing` | 5a–5c PASS (INFO only on re-runs when nothing overdue is left) |
+| 6 | `uat_engine_06_alerts.sql` | alerts created; identical repeat creates 0; no duplicate keys; closed obligations never alert; no email while Gmail NOT_CONFIGURED | 6a PASS, or **INFO = known defect D-001** (no valid recipient); 6b–6e PASS |
+| 7 | `uat_engine_07_job_log.sql` | latest succeeded `job_run` for each of the three engines (duration, records) | 3 PASS |
+| 8 | `uat_engine_08_overall.sql` | reads the persistent database state + job log (no temp table from other files) and prints `OVERALL` | `OVERALL = PASS` (INFO rows are explained; 8.08 INFO = D-001) |
+
+**Run the whole sequence 1→8 a second time** (new tab each time): every PASS stays PASS, 02/04/06 still show "inserts/raises 0", nothing duplicates. INFO rows on the second pass saying "already generated / wrapper already ran" are expected.
+Row 6a `INFO` with 0 notifications is recorded as known baseline defect **D-001**, not an engine failure.
+`uat_engine_demo.sql` (the single large script) remains in the repo for engineering/CLI use only; do not use it in the SQL Editor.
 
 ## Part 3 — Scope, evidence states, ageing, rule change (SQL evidence)
 Run each, in this order, and send the result tables:
@@ -76,7 +81,7 @@ Fill the table above and `docs/LIVE_VERIFICATION.md`, or just paste outputs/scre
 This baseline runs on migrations 0001-0022 as deployed. Three behaviours differ from the owner decisions on purpose until migrations 0023+ exist; record them as **known baseline gaps**, not as UAT failures:
 | Where you will see it | Baseline behaviour | Decided behaviour (after UAT) | Defect |
 |---|---|---|---|
-| Engine demo row 5 `INFO` ("NOTHING created …") | alerts with no valid recipient are dropped silently | durable UNROUTABLE exception + notification, System Health + Notification Centre; Super Admin fallback DEV only | D-001 |
+| Engine step `uat_engine_06` row 6a `INFO` ("NOTHING created …") | alerts with no valid recipient are dropped silently | durable UNROUTABLE exception + notification, System Health + Notification Centre; Super Admin fallback DEV only | D-001 |
 | `uat_scope_check` INFO row "coverage report lists other locations" | applicability / coverage readable regardless of scope | Applicability Matrix and coverage scope-controlled; Location Master stays global | F-1 |
 | `uat_rule_change` row "already-generated obligations keep v1" | future untouched obligations keep the old rule | future untouched (no human action) obligations are superseded to the new rule; actioned/completed stay pinned | F-2 |
 Anything else that is not PASS is a **new** defect: paste it verbatim, it goes into `docs/qa/DEFECT_LOG.md` unaltered, and sample data is never edited to hide it.
