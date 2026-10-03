@@ -1,6 +1,6 @@
 # Live verification evidence — `bfcl-hrc-dev` (Phase 6)
 
-**Status: BASELINE ACCEPTED (2026-10-03) for migrations 0001–0022 and the modular engine UAT.** Browser UAT C1–C13 and the Part-3 scripts are tracked below.
+**Status: PHASE 6 BASELINE CLOSED (2026-10-03) — migrations 0001–0025 live-verified on `bfcl-hrc-dev`, PostgreSQL 17; D-001, F-1 and F-2 live verified.** Browser UAT C1–C13 and the Part-3 scripts are tracked below.
 Evidence is labelled by source. **Live (owner-reported)** = results the owner ran in the Supabase SQL Editor of `bfcl-hrc-dev` and reported to Claude (Claude cannot reach the live project, so these are transcribed from the owner's reports, not independently observed). **CI/local** = automated PostgreSQL 16 and 17 runs of the same files against a throwaway database. The two are never mixed.
 
 ## Gate 1 — deployment — LIVE (owner-reported), PASS
@@ -49,3 +49,34 @@ Second-pass requirement: accepted by the owner on the strength of the live idemp
 
 ## Still live-only
 See "Remaining live-only checks" in `docs/UAT_PHASE6_RUNBOOK.md` (one consolidated list).
+
+
+## FINAL LIVE GATE — migrations 0001–0025 — LIVE `bfcl-hrc-dev`, PostgreSQL 17 (owner-reported, 2026-10-03)
+`supabase/tests/live_gate.sql` — **OVERALL = PASS, 0 FAIL**
+| Check | Live result |
+|---|---|
+| migrations applied / exact versions 0001–0025 | 25/25, no gaps — PASS |
+| security audit violations | 0 — PASS |
+| public tables / views | 45 / 5 — PASS |
+| permissions / roles | 20 / 5 — PASS |
+| scheduled job definitions / numbering rules / active alert defaults | 7 / 11 / 3 — PASS |
+| compliance + exception statuses / RISK values | 9 / 4 — PASS |
+| SUPER_ADMIN permissions | 20 — PASS |
+| tables without forced RLS / anon-readable tables / extensions in public | 0 / 0 / 0 — PASS |
+| required functions present | 24/24 — PASS |
+| `my_access()` anon-callable / engines API-callable | false / false — PASS |
+| PostgreSQL | 17 |
+| dev admin | active, `scope_all = true`, linked |
+| environment | development |
+| instances / exceptions / licences stored (information) | 17 / 11 / 3 |
+
+`supabase/dev-samples/live_followup_check.sql` — **all 15 checks PASS, OVERALL = PASS**
+0023 D-001 routing/unroutable implementation; System Health unroutable visibility; 0024 applicability scope; Location Master remains global; coverage scope; 0025 `human_touched_at`/supersession; partial unique idempotency index; superseded status; reconciliation/report functions; activation triggers reconciliation; registers/evidence exclude superseded; no duplicate live keys; `pg_cron` not installed.
+
+| Item | Status |
+|---|---|
+| D-001 (migration 0023) | **LIVE VERIFIED** |
+| F-1 (migration 0024) | **LIVE VERIFIED** |
+| F-2 (migration 0025) | **LIVE VERIFIED** |
+| `pg_cron` | not installed (scheduling OFF) |
+| Migration lock | 0001–0025 hash-locked; future fixes start at migration 0026 |

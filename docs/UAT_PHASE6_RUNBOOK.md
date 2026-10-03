@@ -121,3 +121,7 @@ Live tile-vs-register equality (optional single query, SQL Editor): `select (sel
 ## Follow-up migrations 0023 (D-001), 0024 (F-1), 0025 (F-2) — live verification
 Code-complete and verified on PostgreSQL 16/17 in CI. After they deploy to `bfcl-hrc-dev`, the **only** live step is: run `supabase/tests/live_gate.sql` (expects 25 migrations, 45 tables, 5 views, 20 permissions, OVERALL PASS). Then, optionally, the single consolidated check `supabase/dev-samples/live_followup_check.sql` (read-only).
 The modular engine files 01/04/05/06 and `uat_rule_change.sql` require migration 0025 (they use the partial idempotency key).
+
+
+## PHASE 6 BASELINE CLOSED — 2026-10-03
+LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported): `live_gate.sql` OVERALL PASS (25/25 migrations, 45 tables, 5 views, 20 permissions, 5 roles, audit 0, anon exposure 0, 24/24 functions) and `live_followup_check.sql` 15/15 PASS. D-001, F-1, F-2 live verified. Full detail: `docs/LIVE_VERIFICATION.md`. The only remaining manual items are the optional visual confirmations listed under "Browser UAT C1–C13".
