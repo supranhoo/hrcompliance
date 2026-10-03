@@ -94,3 +94,25 @@ Anything else that is not PASS is a **new** defect: paste it verbatim, it goes i
 * **Live, owner-reported — PASS:** Gate (live_gate), samples load, engine files 01–08 (OVERALL PASS, 17 obligations, 3 notifications). The full 01–08 sequence is **not** to be repeated by hand: second-pass evidence = live idempotency proofs in 02/04/06 + automated PG16/17 two-pass run (`scripts/validation/uat-modular-test.sh`). Record: `docs/LIVE_VERIFICATION.md`.
 * **Automated (CI, PG16/17) — PASS:** scope, evidence-state, ageing and rule-change scripts; headless-browser checks (see below).
 * **Remaining live-only checks:** see the consolidated list at the end of this file; the four Part-3 scripts are optional live re-confirmation and need no manual effort unless the owner wants live proof.
+
+## Browser UAT C1–C13: what is automated, what needs a human
+Automated = `npm run test:e2e` (headless Chromium, 23 checks, network intercepted and answered from fixtures generated from the real database; runs in CI) + 127 unit/component tests. **These do not talk to the live Supabase/Google**, so the "Live" column is the residual.
+| Case | Automated (CI) | Live-only residual (owner, ~10 min total) |
+|---|---|---|
+| C1 Dashboard | renders server numbers; compliance-% definition shown | eyeball that the numbers look sensible against the sample data |
+| C1b/C2 Drill-downs | overdue tile → register with `due_state=overdue` in URL; filter control reflects URL; server range+count queries | none (equality of tile vs register total is checked by SQL below) |
+| C2b URL filters | filter ↔ URL sync, unknown keys ignored, `due_within` becomes a date range | none |
+| C3 Applicability | SQL (engine 03, CI + live PASS) | none |
+| C4 Idempotent generation | SQL (engine 02, live PASS) | none |
+| C5 Rule change | SQL (`uat_rule_change.sql`, CI) | none |
+| C6 Status actions + mandatory reasons | transition/reason rules in SQL suites; UI logic in unit tests | **one live click-through**: open one obligation → Update status → try Open without reason (blocked) → with reason (works) |
+| C7/C7b Exceptions, ageing, auto-resolution | engine 04/05 (live PASS), ageing buckets (CI) | none |
+| C8 Evidence states | `uat_evidence_fixture.sql` (CI: all five states) | none |
+| C9 Licence register | unit + e2e register render; thresholds read from config | glance at badge colours (expired red / valid green) |
+| C10 Alerts | engine 06 (live PASS: 3 notifications) | none (bell is a known placeholder, G-001, fixed in 0023 work) |
+| C11 Scope | `uat_scope_check.sql` (CI) | none |
+| C12 Calendar | e2e: month grid has 42 cells; RPC called for visible range only | glance at month/week/agenda once |
+| C13 Permissions/redirects | e2e: no-permission message, nav hides sections, `/no-access`, signed-out → `/login` | none |
+| Responsive | e2e: mobile collapses sidebar behind a menu button; no horizontal scroll | glance on a phone-width window |
+**Minimum human visual confirmation: C6 (one status change with a reason), plus one look at the dashboard, calendar and licence badges.** Everything else is covered by SQL or CI.
+Live tile-vs-register equality (optional single query, SQL Editor): `select (select count(*) from public.v_compliance_instance where due_state='overdue') as overdue_rows;` should equal the Overdue tile.
