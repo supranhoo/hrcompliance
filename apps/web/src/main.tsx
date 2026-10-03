@@ -6,29 +6,39 @@ import './styles/index.css'
 import { AuthProvider } from './app/AuthProvider'
 import { RequireAuth, RequirePermission } from './app/RequireAccess'
 import { Layout } from './app/Layout'
-import { DashboardPage, LoginPage, NoAccessPage, SystemHealthPage } from './pages/Pages'
+import { ToastProvider } from './app/Toasts'
+import { ErrorBoundary } from './app/ErrorBoundary'
+import { DashboardPage, LoginPage, NoAccessPage, NotFoundPage, UnauthorizedPage } from './pages/Pages'
+import { UsersPage } from './pages/UsersPage'
+import { SystemHealthPage } from './pages/SystemHealthPage'
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30_000 } } })
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/no-access" element={<NoAccessPage />} />
-            <Route element={<RequireAuth />}>
-              <Route element={<Layout />}>
-                <Route index element={<DashboardPage />} />
-                <Route element={<RequirePermission perm="config.read" />}>
-                  <Route path="admin/system-health" element={<SystemHealthPage />} />
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <BrowserRouter>
+            <AuthProvider>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/no-access" element={<NoAccessPage />} />
+                <Route element={<RequireAuth />}>
+                  <Route element={<Layout />}>
+                    <Route index element={<DashboardPage />} />
+                    <Route path="unauthorized" element={<UnauthorizedPage />} />
+                    <Route element={<RequirePermission perm="user.read" />}><Route path="admin/users" element={<UsersPage />} /></Route>
+                    <Route element={<RequirePermission perm="health.read" />}><Route path="admin/system-health" element={<SystemHealthPage />} /></Route>
+                    <Route path="*" element={<NotFoundPage />} />
+                  </Route>
                 </Route>
-              </Route>
-            </Route>
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </AuthProvider>
+          </BrowserRouter>
+        </ToastProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   </StrictMode>,
 )

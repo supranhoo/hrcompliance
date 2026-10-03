@@ -12,7 +12,13 @@
 
 ## RLS test coverage today (`supabase/tests/10_rls_and_rules.sql`)
 anon, unprovisioned, disabled, viewer (read-only), scoped writer, super-admin; select/insert/update/delete/truncate negatives on masters, config, audit, counters, identity.
-**Gap:** tests exist for each *current* table family but not yet auto-enumerated for "every protected table" — an automated check that every table in `public` has RLS enabled, FORCE and ≥1 policy is a Phase 2 follow-up (see IMPLEMENTATION_PLAN).
+**Automated classification audit** (`supabase/tests/security_audit.sql`, asserted empty in `npm run test:db`, also runnable read-only in the Supabase SQL editor): every `public` table has RLS enabled and forced; `anon` holds no table privilege and cannot execute any public function; `authenticated` has no TRUNCATE/REFERENCES/TRIGGER; any table with API grants has ≥1 policy; default privileges no longer hand out grants to API roles. Internal-only tables (`number_counter`, `audit_log` writes, `job_run` writes) have no API write grants.
+Findings fixed by it so far: default `DELETE`/`TRUNCATE` grants (D-003); extension functions exposed to `anon` (D-012).
+Negative tests also cover: status/config/job tables, secret-looking `system_config` keys, immutable published config, API roles calling `app.job_start`, `system_health` for unprivileged users.
 
 ## To do before UAT
 Restrict sign-in to BFCL Workspace domain(s); file type/size enforcement in the Drive upload Edge Function; security headers on Cloudflare; dependency audit in CI; rotate/limit service-role usage; production DB role review; penetration-style review of every RPC.
+
+## Key handling
+Browser: publishable key only. Never requested in chat, committed, or `VITE_`-prefixed: database password, `sb_secret_…`/legacy service_role, Google OAuth client secret, Gmail credentials. The previously exposed DB password was rotated by the owner and is not relied on.
+`system_config` rejects keys that look like secrets (secret/password/token/api_key/private/credential).

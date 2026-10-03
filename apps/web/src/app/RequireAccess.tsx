@@ -1,6 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from './AuthProvider'
 import { can } from '../lib/access'
+import { UnauthorizedPage } from '../pages/Pages'
 
 export function RequireAuth() {
   const { status } = useAuth()
@@ -14,5 +15,5 @@ export function RequireAuth() {
 /** Route-level UX guard. The database re-checks every read/write via RLS. */
 export function RequirePermission({ perm }: { perm: string }) {
   const { access } = useAuth()
-  return can(access, perm) ? <Outlet /> : <p role="alert" className="p-8 text-status-crit">You do not have permission to view this page.</p>
+  return can(access, perm) ? <Outlet /> : <UnauthorizedPage />
 }

@@ -38,3 +38,25 @@ Decision: `app.audit_row` writes old/new JSON and changed fields (ignoring stamp
 Limitation: service-role/superuser sessions can still disable triggers; production DB role hygiene is covered in SECURITY.md.
 
 ## D-010 No maker-checker, no month lock (per product requirement 95/96)
+
+## D-011 One versioned `config_definition` store for rule-like configuration (until audited data justifies typed tables)
+Decision: SLA, alert, exception, template, contractor-requirement, score, bill-hold, report and import definitions share `config_definition(kind, code, version, status, definition jsonb)`.
+Published versions are immutable (trigger); change = `public.config_new_version()`, which retires the previous version atomically (advisory-locked) and records a mandatory reason. Any `when` clause must pass `app.rule_is_valid`.
+Reason: those shapes depend on source-data findings that do not exist yet (rule 103); versioning/audit/RLS are solved once. Alternatives: a table per kind now (premature, likely rework).
+Impact: each kind is promoted to typed tables with a data-preserving migration when its module is built. Consumers must read the version in force on the record's effective date to keep history stable.
+
+## D-012 Supabase key model, Data API posture, extensions
+Browser uses `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` only. Secret/service keys are server-side secrets, never `VITE_`-prefixed, never in Git or chat.
+Posture: Data API on, new-table default privileges revoked (0007), RLS enabled+forced on every table, `supabase/tests/security_audit.sql` must return zero rows (CI + run in the SQL editor against the real project).
+Extensions (`citext`, `pg_trgm`) live in the `extensions` schema: found by the audit — in `public` their ~80 functions were executable by `anon` through the API.
+Note: functions comparing `citext` need `extensions` on their `search_path` (a missing path silently degraded to case-sensitive text comparison; covered by the mixed-case login test).
+
+## D-013 Migration naming and application
+Files are `YYYYMMDDNNNNNN_name.sql` (Supabase CLI version = leading digits). Migrations 1–11 have **not been applied to any database**; until the first apply they may be amended. After the first apply they are immutable: only new migrations.
+Seed split: required system data is a migration (idempotent); development-only data lives in `supabase/seed/`.
+
+## D-014 TanStack Table pinned to v8; native controls over extra libraries
+`@tanstack/react-table` v9 is now `latest` with a different API; v8 is pinned. Date/time pickers use native inputs; dialog/drawer use native `<dialog>`; no calendar/chart/editor library until a module needs one.
+
+## D-015 Profiles = `app_user`
+No separate `profiles` table: `app_user` is the application profile (pre-provisioned by email, linked on first login). One identity table avoids drift.

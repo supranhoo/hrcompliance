@@ -17,6 +17,8 @@ audit trigger on every business/config table · grants + RLS declared in the sam
 | Numbering | numbering_rule, number_counter (+ `app.next_business_id`) |
 | Audit | audit_log (append-only) |
 | Configuration | lov_set, lov_value, field_definition, form_section, form_section_field, field_role_access, rule_definition (+ `app.rule_is_valid`) |
+| Platform | module_definition, status_definition, status_transition (+ `app.status_transition_allowed`), system_config (secret-looking keys rejected), config_definition (versioned, immutable once published; `public.config_new_version`) |
+| Jobs / health | job_definition (7 seeded: compliance_generation, due_status_refresh, licence_expiry_detection, exception_generation, alert_generation, communication_followup, housekeeping), job_run (unique job+idempotency key; retry/backoff/stale-reclaim), `app.job_start/job_finish`, `public.system_health()` |
 
 ## [planned] Domain (by phase)
 * **P5 Masters**: employee (authoritative, `employee_code` UNIQUE; org FKs), contractor (CTR-…; type, licence link), compliance_category, compliance_master (law FK, frequency, due-rule JSON AST, evidence requirement, owner, risk, versioned), licence_type, risk/severity as LOV.
@@ -62,3 +64,6 @@ erDiagram
 
 ## Indexing strategy
 Index only proven query paths: FK columns, `status`+`due_date` for registers, `(table_name, record_id, at desc)` for audit (built), GIN on `custom` and `pg_trgm` on search keys (planned for global search).
+
+## Dynamic field values (D-004) — storage contract
+Business tables get `custom jsonb not null default '{}'` (+ GIN index) **in the migration that creates them**. Keys = `field_definition.key`; values validated against the definition (type, LOV membership, min/max, required/conditional rules) by the write path (RPC/Edge Function, shared Zod schema generated from metadata). Reporting/import/export expand `custom` via `field_definition`. A field that becomes hot is promoted to a typed column by migration with a backfill. Not yet exercised: no business table exists.

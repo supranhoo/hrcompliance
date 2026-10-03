@@ -35,7 +35,7 @@ describe('route protection', () => {
   })
   it('blocks a page lacking the permission', () => {
     auth.value = { status: 'ready', access: { permissions: new Set(['master.read']) } }
-    renderAt('/admin'); expect(screen.getByRole('alert')).toHaveTextContent('do not have permission')
+    renderAt('/admin'); expect(screen.getByText(/do not have permission/i)).toBeInTheDocument()
   })
   it('allows a page with the permission', () => {
     auth.value = { status: 'ready', access: { permissions: new Set(['config.read']) } }

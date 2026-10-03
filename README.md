@@ -4,15 +4,15 @@ Configurable compliance and governance platform (compliance, contractor complian
 disciplinary, communications, dashboards). PostgreSQL (Supabase) is the source of truth; Excel/Sheets are import,
 export and reconciliation formats only.
 
-## Status (v0.1.0 — development, nothing deployed)
+## Status (v0.2.0 — development; nothing deployed, nothing applied to Supabase)
 | Area | State |
 |---|---|
-| Repo, CI definition | implemented; CI workflow **not yet run on GitHub** |
-| DB foundation (masters, RBAC, audit, business IDs, config metadata, RLS) | implemented, **locally tested** on PostgreSQL 16 with a Supabase shim (68 checks) |
-| Web foundation (auth shell, route guard, layout, theme) | implemented, **locally tested** (typecheck, lint, 11 unit/component tests, build) |
-| Source data audit | **blocked: no source workbooks supplied** (`docs/migration/SOURCE_DATA_AUDIT.md`) |
-| Real Supabase project / Google OAuth / Drive / Gmail | **not connected** (credentials not provided) |
-| Everything else (compliance core, contractors, cases, comms, reports…) | not started — see `docs/IMPLEMENTATION_PLAN.md` |
+| DB foundation + platform + jobs (migrations 1–11) | implemented, **locally tested** on PostgreSQL 16 with a Supabase shim: 127 checks incl. negative RLS, security audit (0 violations), concurrency |
+| Web shell, UI kit, server-driven table, service contracts, Users/System Health pages | implemented, **locally tested** (typecheck, lint, 42 tests, build); not exercised against a live project |
+| Supabase dev project `bfcl-hrc-dev` | created by owner; **migrations not applied** (needs owner action, `docs/DEPLOYMENT.md`) |
+| Google sign-in, Drive, Gmail | not configured (adapters report `NOT_CONFIGURED`) |
+| Source data audit | **blocked: no workbooks received** |
+| Compliance core, contractors, cases, comms, reports… | not started |
 
 ## Layout
 `apps/web` React+TS+Vite SPA · `supabase/migrations` ordered SQL · `supabase/seed` system seed · `supabase/tests` SQL tests ·
@@ -25,7 +25,7 @@ npm run typecheck | lint | test | build
 npm run test:db        # needs local PostgreSQL 16 (psql, createdb rights); uses a throwaway database
 npm run validate       # all of the above
 ```
-Copy `.env.example` to `.env.local` and fill names with your **development** Supabase project values. Never commit secrets.
+Copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` for the **development** project. Never commit secrets; privileged keys are server-side only.
 
 ## Documentation
 ARCHITECTURE · DATA_MODEL · IMPLEMENTATION_PLAN · DECISIONS · MIGRATION_PLAN · SECURITY · DEPLOYMENT · UAT · OPERATIONS (all in `docs/`).

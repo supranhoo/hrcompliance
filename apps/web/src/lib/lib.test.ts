@@ -4,7 +4,7 @@ import { can, parseAccess } from './access'
 
 describe('parseEnv', () => {
   it('accepts a valid config', () => {
-    const r = parseEnv({ VITE_SUPABASE_URL: 'https://x.supabase.co', VITE_SUPABASE_ANON_KEY: 'k' })
+    const r = parseEnv({ VITE_SUPABASE_URL: 'https://x.supabase.co', VITE_SUPABASE_PUBLISHABLE_KEY: 'k' })
     expect(r.ok).toBe(true)
   })
   it('reports missing values without throwing', () => {
@@ -13,7 +13,7 @@ describe('parseEnv', () => {
     if (!r.ok) expect(r.errors.length).toBe(2)
   })
   it('rejects unknown environment names', () => {
-    expect(parseEnv({ VITE_SUPABASE_URL: 'https://x.co', VITE_SUPABASE_ANON_KEY: 'k', VITE_APP_ENV: 'staging' }).ok).toBe(false)
+    expect(parseEnv({ VITE_SUPABASE_URL: 'https://x.co', VITE_SUPABASE_PUBLISHABLE_KEY: 'k', VITE_APP_ENV: 'staging' }).ok).toBe(false)
   })
 })
 
