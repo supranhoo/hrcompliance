@@ -70,3 +70,16 @@ Use a normal window; for the mobile check resize the window to phone width or us
 
 ## Recording results
 Fill the table above and `docs/LIVE_VERIFICATION.md`, or just paste outputs/screenshots to Claude, who will record them verbatim. Any FAIL or surprise → one row in `docs/qa/DEFECT_LOG.md` (section "Found during live UAT").
+
+
+## Baseline expectations vs. owner-approved gaps (so they are not mistaken for new defects)
+This baseline runs on migrations 0001-0022 as deployed. Three behaviours differ from the owner decisions on purpose until migrations 0023+ exist; record them as **known baseline gaps**, not as UAT failures:
+| Where you will see it | Baseline behaviour | Decided behaviour (after UAT) | Defect |
+|---|---|---|---|
+| Engine demo row 5 `INFO` ("NOTHING created …") | alerts with no valid recipient are dropped silently | durable UNROUTABLE exception + notification, System Health + Notification Centre; Super Admin fallback DEV only | D-001 |
+| `uat_scope_check` INFO row "coverage report lists other locations" | applicability / coverage readable regardless of scope | Applicability Matrix and coverage scope-controlled; Location Master stays global | F-1 |
+| `uat_rule_change` row "already-generated obligations keep v1" | future untouched obligations keep the old rule | future untouched (no human action) obligations are superseded to the new rule; actioned/completed stay pinned | F-2 |
+Anything else that is not PASS is a **new** defect: paste it verbatim, it goes into `docs/qa/DEFECT_LOG.md` unaltered, and sample data is never edited to hide it.
+
+## Evidence capture sheet (send back, one block per script)
+`script name` · timestamp · every result row exactly as shown (or a screenshot) · for the engine demo, run 1 and run 2 separately.
