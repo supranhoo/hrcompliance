@@ -19,6 +19,8 @@ export const NAV: NavItem[] = [
   { path: '/admin/reference/department', title: 'Departments', perm: 'master.read', group: 'Master Data' },
   { path: '/admin/reference/document-type', title: 'Document Types', perm: 'master.read', group: 'Master Data' },
   { path: '/admin/reference/category', title: 'Compliance Categories', perm: 'compliance.read', group: 'Master Data' },
+  { path: '/admin/alert-rules', title: 'Alert Rules', perm: 'config.read', group: 'Administration' },
+  { path: '/admin/exception-config', title: 'Exception Settings', perm: 'config.read', group: 'Administration' },
   { path: '/admin/lov', title: 'Lists (LOV)', perm: 'config.read', group: 'Administration' },
   { path: '/admin/statuses', title: 'Statuses', perm: 'config.read', group: 'Administration' },
   { path: '/admin/settings', title: 'Settings', perm: 'config.read', group: 'Administration' },

@@ -20,7 +20,7 @@ for (let i = 0; i < 60; i++) { try { if ((await fetch(BASE)).ok) break } catch {
 const results = []; const check = (name, ok, detail = '') => { results.push({ name, ok }); console.log(`${ok ? 'ok  ' : 'FAIL'} - ${name}${ok ? '' : '  ' + detail}`) }
 const browser = await chromium.launch({ executablePath: chromePath, args: ['--no-sandbox'] })
 const ctx = await browser.newContext({ viewport: { width: 1360, height: 860 } })
-const requests = []
+const requests = []; const posts = []
 const profile = (perms) => ({ ...fx('my_access.json'), permissions: perms })
 let access = profile(fx('my_access.json').permissions)
 const today = new Date(); const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -38,6 +38,8 @@ await ctx.route(`${SB}/**`, async (route) => {
   const views = { v_compliance_instance: 'v_compliance_instance.json', v_exception: 'v_exception.json', v_licence_status: 'v_licence_status.json', v_evidence_requirement: 'v_evidence_requirement.json' }
   const view = Object.keys(views).find((v) => p.endsWith('/' + v))
   if (view) return route.fulfill(json([fx(views[view])], { 'content-range': '0-0/1' }))
+  if (req.method() === 'POST' && p.endsWith('/compliance_master')) { posts.push({ path: p, body: req.postData() }); return route.fulfill({ ...json({ id: 'new-master' }), status: 201 }) }
+  if (p.endsWith('/rpc/alert_routing_validation')) return route.fulfill(json([]))
   if (p.endsWith('/notification')) return route.fulfill(json(req.method() === 'HEAD' ? [] : [{ id: 'n1', category: 'alert_unroutable', title: 'UNROUTED: SAMPLE-MONTHLY is due today', body: 'CMP-2026-000001 - rule has no valid recipient', link_kind: 'compliance_instance', link_id: 'i1', created_at: new Date().toISOString(), read_at: null }], { 'content-range': '0-0/1' }))
   if (p.endsWith('/rpc/system_health')) return route.fulfill(json({ database: { connected: true, server_time: new Date().toISOString(), postgres_major: 17 }, schema_version: '20261003000023', integrations: { google_drive: 'NOT_CONFIGURED', gmail: 'NOT_CONFIGURED' }, latest_job: null, latest_failed_job: null, jobs_failed_24h: 0, unroutable_alerts: 2, unroutable_notifications_7d: 1, alert_routing: { errors: 1, warnings: 0 }, latest_job_warning: null, environment: 'production' }))
   if (p.endsWith('/app_user')) return route.fulfill(json([], { 'content-range': '*/0' }))
@@ -95,6 +97,26 @@ await page.goto(BASE + '/admin/system-health'); await page.getByRole('heading', 
 check('System Health shows unroutable alerts and routing errors', await page.getByText('Unroutable alerts').first().isVisible() && await page.getByText('Alert routing errors').isVisible())
 await page.getByRole('button', { name: /^Unroutable alerts/ }).click(); await wait(300)
 check('unroutable tile drills to the exception register filtered by category', page.url().endsWith('/exceptions?category=alert_unroutable'))
+// 5c. Master Data administration (screens render, query their read models, validate and write through the base table)
+const adminPages = [['/admin/compliance-masters', 'Compliance Master', 'v_compliance_master'], ['/admin/rule-versions', 'Rule Versions', 'v_compliance_rule_version'], ['/admin/applicability', 'Applicability Matrix', 'v_applicability'],
+  ['/admin/applicability/coverage', 'Coverage & gaps', 'v_compliance_coverage'], ['/admin/licence-types', 'Licence & Registration Types', 'licence_type'], ['/admin/reference/location', 'Locations', '/location'],
+  ['/admin/reference/document-type', 'Document Types', 'document_type'], ['/admin/lov', 'Lists (LOV)', 'lov_set'], ['/admin/statuses', 'Statuses & Transitions', 'status_definition'], ['/admin/alert-rules', 'Alert Rules', 'v_alert_rule']]
+for (const [path, title, table] of adminPages) {
+  const mk = requests.length; await page.goto(BASE + path); await page.getByRole('heading', { name: title, exact: true }).first().waitFor(); await wait(350)
+  check(`admin: ${title} renders and queries ${table.replace('/', '')}`, requests.slice(mk).some((r) => r.includes(table)))
+}
+await page.goto(BASE + '/admin/settings'); await page.getByRole('heading', { name: 'Settings' }).waitFor(); await wait(300)
+check('admin: Settings lists the typed settings from system_config', requests.some((r) => r.includes('/system_config')) && await page.getByText('Due-soon window (days)').count() >= 0)
+await page.goto(BASE + '/admin/exception-config'); await page.getByRole('heading', { name: 'Exception Settings' }).waitFor(); await wait(300)
+check('admin: Exception Settings explains unroutable alerts and links to the alert rules', await page.getByRole('link', { name: /Alert Rules/ }).first().isVisible())
+await page.goto(BASE + '/admin/compliance-masters'); await page.getByRole('button', { name: 'New compliance' }).click()
+await page.getByRole('button', { name: 'Create compliance' }).click(); await wait(200)
+check('admin: an empty create is blocked by frontend validation (no request)', (await page.getByText('Code is required').isVisible()) && posts.length === 0)
+await page.getByLabel(/^Code/).fill('pf-monthly'); await page.getByLabel(/^Name/).fill('PF monthly'); await page.getByRole('button', { name: 'Create compliance' }).click(); await wait(500)
+check('admin: a valid create is written to compliance_master with a clean payload', posts.length === 1 && posts[0].path.endsWith('/compliance_master') && JSON.parse(posts[0].body).code === 'PF-MONTHLY' && JSON.parse(posts[0].body).category_name === undefined)
+await page.setViewportSize({ width: 390, height: 800 }); await page.goto(BASE + '/admin/applicability'); await wait(400)
+check('admin: mobile layout has no horizontal page scroll', await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1))
+await page.screenshot({ path: join(SHOTS, '8-admin-mobile.png') }); await page.setViewportSize({ width: 1360, height: 860 })
 // 6. sidebar + breadcrumbs + responsive
 await page.goto(BASE + '/exceptions'); await wait(400)
 check('breadcrumb shows the current page', await page.locator('nav[aria-label="Breadcrumb"]').getByText('Exceptions').isVisible())

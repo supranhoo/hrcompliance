@@ -22,7 +22,7 @@ checks(n, check_name, expected, actual, kind) as (values
   (2,  'migration versions are exactly 20261003000001..@@MIG_COUNT@@ (no gaps, no extras)', 'match', (select case when (select versions from mig) is null then 'n/a' when (select versions from mig) = (select versions from expected_mig) then 'match' else 'MISMATCH: ' || coalesce(array_to_string((select versions from mig), ','), '') end), 'exact'),
   (3,  'security audit violations', '0', (select count(*)::text from audit), 'exact'),
   (4,  'application tables in public', '45', (select count(*)::text from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE'), 'exact'),
-  (5,  'views in public', '9', (select count(*)::text from information_schema.views where table_schema = 'public'), 'exact'),
+  (5,  'views in public', '11', (select count(*)::text from information_schema.views where table_schema = 'public'), 'exact'),
   (6,  'permissions', '20', (select count(*)::text from public.permission), 'exact'),
   (7,  'roles', '5', (select count(*)::text from public.role), 'exact'),
   (8,  'scheduled-job definitions', '7', (select count(*)::text from public.job_definition), 'exact'),

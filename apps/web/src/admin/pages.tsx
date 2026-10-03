@@ -17,3 +17,5 @@ export const LicenceTypesPage = () => <AdminRegister spec={licenceTypeSpec} />
 export const LovPage = () => <AdminRegister spec={lovSetSpec} />
 export const StatusesPage = () => <AdminRegister spec={statusSpec} />
 export { SettingsPage } from './SettingsPage'
+export { AlertRulesPage } from './alertRules'
+export { ExceptionConfigPage } from './exceptionConfig'
