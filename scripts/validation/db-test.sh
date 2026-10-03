@@ -59,7 +59,7 @@ for f in supabase/migrations/*.sql; do psql "$URL2" -f "$f" >/dev/null 2>&1; psq
 GATE=$("$PSQL" -qtA -F '|' "$URL2" -f supabase/tests/live_gate.sql)
 echo "$GATE" | grep -E '\|(FAIL|PASS|N/A)$' | sed 's/^/     gate: /' | tail -3
 echo "$GATE" | grep -q '|FAIL$' && { echo "FAIL live gate on pristine DB:"; echo "$GATE" | grep '|FAIL$'; exit 1; }
-echo "$GATE" | grep -q '^99|OVERALL|no FAIL|0 FAIL, 19 PASS, 0 N/A|PASS$' && echo "ok   - live gate passes on a pristine database (22 migrations, 45 tables, 20 permissions, audit 0)" || { echo "FAIL live gate overall:"; echo "$GATE" | tail -3; exit 1; }
+echo "$GATE" | grep -q '^99|OVERALL|no FAIL|0 FAIL, 19 PASS, 0 N/A|PASS$' && echo "ok   - live gate passes on a pristine database (23 migrations, 45 tables, 20 permissions, audit 0)" || { echo "FAIL live gate overall:"; echo "$GATE" | tail -3; exit 1; }
 # environment guard: samples must be REFUSED when the database is unlabelled or labelled production
 GUARD1=$("$PSQL" -q "$URL2" -f supabase/dev-samples/sample_compliance.sql 2>&1 | grep -c "REFUSED" || true)
 psql "$URL2" -c "insert into public.system_config(key,value) values ('environment.name','\"production\"')" >/dev/null

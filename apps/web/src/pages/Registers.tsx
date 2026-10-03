@@ -63,7 +63,7 @@ export function ExceptionsPage() {
   return <Register<ExceptionRow> id="exceptions" title="Exceptions" table={CONTRACT.exceptions.table}
     select={CONTRACT.exceptions.select}
     columns={exceptionCols} getRowId={(r) => r.id} searchColumns={[...CONTRACT.exceptions.search]} defaultSort={{ id: 'detected_at', desc: true }}
-    filterDefs={[{ key: 'severity', label: 'Severity', lov: 'SEVERITY' }, { key: 'status', label: 'Status', statusModule: 'exception' }, { key: 'age_bucket', label: 'Age', options: AGE_BUCKETS }]}
+    filterDefs={[{ key: 'category', label: 'Category', lov: 'EXCEPTION_CATEGORY' }, { key: 'severity', label: 'Severity', lov: 'SEVERITY' }, { key: 'status', label: 'Status', statusModule: 'exception' }, { key: 'age_bucket', label: 'Age', options: AGE_BUCKETS }]}
     extraKeys={['target_breached']} derive={exceptionDerive} quickViewTitle={(r) => r.exception_no} renderQuickView={(r) => <ExceptionQuickView row={r} />} />
 }
 

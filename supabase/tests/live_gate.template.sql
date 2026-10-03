@@ -1,25 +1,25 @@
 -- LIVE VERIFICATION GATE (read-only). Paste the ENTIRE file into the Supabase SQL editor of bfcl-hrc-dev and run it.
 -- It returns one row per check: PASS / FAIL / INFO / N/A, plus an OVERALL row. Nothing is written.
 -- GENERATED from live_gate.template.sql + security_audit.sql by scripts/validation/build-live-gate.sh - do not edit live_gate.sql by hand.
--- Expected state after migrations 0001-0022: 22 migrations, 45 tables, 4 views, 20 permissions, 0 audit violations.
+-- Expected state after migrations 0001-0023: 23 migrations, 45 tables, 4 views, 20 permissions, 0 audit violations.
 with
 audit as (
 @@AUDIT@@
 ),
 mig as (select array_agg(version order by version) as versions from supabase_migrations.schema_migrations),
-expected_mig as (select array(select '202610030000' || lpad(g::text, 2, '0') from generate_series(1, 22) g) as versions),
+expected_mig as (select array(select '202610030000' || lpad(g::text, 2, '0') from generate_series(1, 23) g) as versions),
 fn as (
   select count(*) filter (where to_regprocedure(f) is not null) as present, count(*) as total from unnest(array[
     'public.my_access()', 'public.system_health()', 'public.config_new_version(text,text,text,jsonb,text,date)',
     'public.compliance_activate_rule_version(uuid,text)', 'public.compliance_coverage(date)', 'public.compliance_create_manual_instance(uuid,uuid,date,text)',
     'public.compliance_calendar(date,date)', 'public.evidence_replace(uuid,text,text,text,bigint,text,date,text)', 'public.compliance_dashboard()',
-    'public.compliance_set_status(uuid,text,text)', 'public.exception_set_status(uuid,text,text)',
+    'public.compliance_set_status(uuid,text,text)', 'public.exception_set_status(uuid,text,text)', 'public.alert_routing_validation()', 'app.unroutable_recipients(uuid,uuid)',
     'app.generate_compliance_instances(date,date)', 'app.run_compliance_generation(text)', 'app.detect_exceptions()', 'app.run_exception_detection(text)',
     'app.generate_alerts()', 'app.run_alert_generation(text)', 'app.job_start(text,text,text,text)', 'app.job_finish(uuid,boolean,integer,jsonb)',
     'app.next_business_id(text,date)']) f),
 checks(n, check_name, expected, actual, kind) as (values
-  (1,  'migrations recorded as applied', '22', (select coalesce(cardinality(versions)::text, 'n/a') from mig), 'exact'),
-  (2,  'migration versions are exactly 20261003000001..22 (no gaps, no extras)', 'match', (select case when (select versions from mig) is null then 'n/a' when (select versions from mig) = (select versions from expected_mig) then 'match' else 'MISMATCH: ' || coalesce(array_to_string((select versions from mig), ','), '') end), 'exact'),
+  (1,  'migrations recorded as applied', '23', (select coalesce(cardinality(versions)::text, 'n/a') from mig), 'exact'),
+  (2,  'migration versions are exactly 20261003000001..23 (no gaps, no extras)', 'match', (select case when (select versions from mig) is null then 'n/a' when (select versions from mig) = (select versions from expected_mig) then 'match' else 'MISMATCH: ' || coalesce(array_to_string((select versions from mig), ','), '') end), 'exact'),
   (3,  'security audit violations', '0', (select count(*)::text from audit), 'exact'),
   (4,  'application tables in public', '45', (select count(*)::text from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE'), 'exact'),
   (5,  'views in public', '4', (select count(*)::text from information_schema.views where table_schema = 'public'), 'exact'),

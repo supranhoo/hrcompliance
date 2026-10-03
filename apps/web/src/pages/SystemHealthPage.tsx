@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { supabase, appEnv } from '../lib/supabase'
 import { Badge, ErrorState, KpiCard, Skeleton, type Tone } from '../components/ui'
 import { getServices } from '../services'
+import { useNavigate } from 'react-router-dom'
 
 const jobSchema = z.object({ job_code: z.string(), status: z.string(), started_at: z.string(), completed_at: z.string().nullable().optional(), records_processed: z.number().nullable().optional(), attempt: z.number().optional(), message: z.string().nullable().optional() }).nullable()
 export const healthSchema = z.object({
@@ -10,11 +11,18 @@ export const healthSchema = z.object({
   schema_version: z.string().nullable(),
   integrations: z.record(z.string(), z.string()),
   latest_job: jobSchema, latest_failed_job: jobSchema, jobs_failed_24h: z.number(),
+  // added by migration 0023 (D-001); optional so an older deployment still renders
+  unroutable_alerts: z.number().default(0),
+  unroutable_notifications_7d: z.number().default(0),
+  alert_routing: z.object({ errors: z.number(), warnings: z.number() }).default({ errors: 0, warnings: 0 }),
+  latest_job_warning: z.object({ job_code: z.string(), started_at: z.string(), message: z.string().nullable().optional() }).nullable().default(null),
+  environment: z.string().default('unknown'),
 })
 export type Health = z.infer<typeof healthSchema>
 export const integrationTone = (s?: string): Tone => (s === 'CONFIGURED' ? 'ok' : s === 'ERROR' ? 'crit' : 'warn')
 
 export function SystemHealthPage() {
+  const nav = useNavigate()
   const q = useQuery({
     queryKey: ['system-health'], refetchInterval: 60_000,
     queryFn: async () => {
@@ -37,6 +45,13 @@ export function SystemHealthPage() {
         <KpiCard label="Schema version" value={h.schema_version ?? 'n/a'} />
         <KpiCard label="Failed jobs (24h)" value={h.jobs_failed_24h} tone={h.jobs_failed_24h > 0 ? 'crit' : 'ok'} />
       </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard label="Unroutable alerts" value={h.unroutable_alerts} tone={h.unroutable_alerts > 0 ? 'crit' : 'ok'} hint="Nobody can be told — see Exceptions" onClick={() => nav('/exceptions?category=alert_unroutable')} />
+        <KpiCard label="Alert routing errors" value={h.alert_routing.errors} tone={h.alert_routing.errors > 0 ? 'crit' : 'ok'} hint={`${h.alert_routing.warnings} warning(s)`} />
+        <KpiCard label="Unrouted alerts sent (7d)" value={h.unroutable_notifications_7d} tone={h.unroutable_notifications_7d > 0 ? 'warn' : 'ok'} hint="Delivered to escalation recipients" />
+        <KpiCard label="Alert fallback" value={h.environment === 'development' ? 'Super Admin (dev)' : 'Escalation rule'} hint="Super Admin fallback is development-only" />
+      </div>
+      {h.latest_job_warning && <p role="status" className="rounded border border-status-warn bg-white p-3 text-sm">Latest job warning: {h.latest_job_warning.job_code} · {h.latest_job_warning.message ?? 'see job log'}</p>}
       <div className="rounded-lg border border-line bg-white p-4">
         <h2 className="text-sm font-semibold">Integrations</h2>
         <ul className="mt-2 space-y-1 text-sm">

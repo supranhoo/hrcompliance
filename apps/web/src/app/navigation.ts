@@ -7,6 +7,7 @@ export const NAV: NavItem[] = [
   { path: '/exceptions', title: 'Exceptions', perm: 'exception.read', group: 'Compliance' },
   { path: '/licences', title: 'Licences & Registrations', perm: 'licence.read', group: 'Compliance' },
   { path: '/evidence', title: 'Evidence', perm: 'evidence.read', group: 'Compliance' },
+  { path: '/notifications', title: 'Notification Centre', group: 'Overview' },
   { path: '/admin/users', title: 'Users', perm: 'user.read', group: 'Administration' },
   { path: '/admin/system-health', title: 'System Health', perm: 'health.read', group: 'Administration' },
 ]

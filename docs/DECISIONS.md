@@ -111,3 +111,9 @@ Completed/actioned obligations stay on their original rule version; future untou
 
 ## D-030 UAT defaults are provisional (owner, 2026-10-03)
 Alert timing, due-soon, licence thresholds, grace, reason-required transitions and horizon are accepted **for UAT only**; they are development defaults, not BFCL policy, and must become editable from the web app (configuration increment).
+
+## D-031 D-001 implementation (migration 0023)
+* Fallback order for an alert whose rule resolves to nobody: configured `UNROUTABLE_ESCALATION` alert rule (BFCL-owned configuration, **not seeded**) -> DEVELOPMENT only: active SUPER_ADMIN in scope -> nobody. Recipients found get a durable, deduplicated `alert_unroutable` in-app notification; when nobody can be told, `app.detect_exceptions()` raises an `alert_unroutable` exception (auto-resolves when routing exists), `generate_alerts()` returns `unreachable`, and `run_alert_generation` records a non-fatal warning on the succeeded job run.
+* `public.alert_routing_validation()` lists active rules with no valid routing: error for rules flagged `"critical": true` and for a missing `UNROUTABLE_ESCALATION` in production; warning otherwise. System Health shows counts. It is the pre-activation check for production.
+* `app.job_finish` now keeps an optional warning on a succeeded run (previously cleared).
+* Super Admin is never a production recipient; the environment is read from `system_config environment.name`.

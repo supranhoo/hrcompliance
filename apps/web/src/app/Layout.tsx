@@ -6,6 +6,28 @@ import { appEnv } from '../lib/supabase'
 import { breadcrumbsFor, NAV } from './navigation'
 import { ErrorBoundary } from './ErrorBoundary'
 import { cx } from '../components/ui'
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '../lib/supabase'
+import { unreadLabel } from '../lib/notifications'
+import { UNREAD_KEY } from '../pages/NotificationsPage'
+
+function Bell() {
+  const q = useQuery({
+    queryKey: UNREAD_KEY, refetchInterval: 60_000,
+    queryFn: async () => {
+      if (!supabase) return 0
+      const { count, error } = await supabase.from('notification').select('id', { count: 'exact', head: true }).eq('channel', 'in_app').is('read_at', null)
+      if (error) throw error
+      return count ?? 0
+    },
+  })
+  const n = q.data ?? 0
+  return (
+    <Link to="/notifications" aria-label={unreadLabel(n)} title={unreadLabel(n)} className="relative rounded px-2 py-1 text-muted hover:bg-canvas">
+      🔔{n > 0 && <span className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-status-crit px-1 text-center text-[10px] font-semibold leading-4 text-white">{n > 99 ? '99+' : n}</span>}
+    </Link>
+  )
+}
 
 function Sidebar({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const { access } = useAuth()
@@ -90,7 +112,7 @@ export function Layout() {
             </ol>
           </nav>
           <span className="rounded bg-canvas px-2 py-0.5 text-xs uppercase text-muted">{appEnv}</span>
-          <button type="button" aria-label="Notifications" title="No notifications yet" className="rounded px-2 py-1 text-muted hover:bg-canvas">🔔</button>
+          <Bell />
           <ProfileMenu />
         </header>
         <main className="min-w-0 flex-1 overflow-auto p-4 md:p-6"><ErrorBoundary><Outlet /></ErrorBoundary></main>

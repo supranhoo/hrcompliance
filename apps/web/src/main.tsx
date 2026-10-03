@@ -15,6 +15,7 @@ import { CompliancePage, EvidencePage, ExceptionsPage, LicencesPage } from './pa
 import { AuthCallbackPage } from './pages/AuthCallbackPage'
 import { UsersPage } from './pages/UsersPage'
 import { SystemHealthPage } from './pages/SystemHealthPage'
+import { NotificationsPage } from './pages/NotificationsPage'
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30_000 } } })
 
@@ -33,6 +34,7 @@ createRoot(document.getElementById('root')!).render(
                   <Route element={<Layout />}>
                     <Route index element={<DashboardPage />} />
                     <Route path="unauthorized" element={<UnauthorizedPage />} />
+                    <Route path="notifications" element={<NotificationsPage />} />
                     <Route element={<RequirePermission perm="compliance.read" />}><Route path="compliance" element={<CompliancePage />} /><Route path="calendar" element={<CalendarPage />} /></Route>
                     <Route element={<RequirePermission perm="exception.read" />}><Route path="exceptions" element={<ExceptionsPage />} /></Route>
                     <Route element={<RequirePermission perm="licence.read" />}><Route path="licences" element={<LicencesPage />} /></Route>
