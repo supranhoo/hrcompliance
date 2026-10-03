@@ -60,3 +60,9 @@ Seed split: required system data is a migration (idempotent); development-only d
 
 ## D-015 Profiles = `app_user`
 No separate `profiles` table: `app_user` is the application profile (pre-provisioned by email, linked on first login). One identity table avoids drift.
+
+## D-016 Live-project audit findings and the audit's scope
+First run of `security_audit.sql` on the real `bfcl-hrc-dev` project (2026-10-03) returned 2 rows; table-level checks were clean (all 32 tables RLS enabled+forced, no anon grants, no exposed table without policy).
+1. `public.rls_auto_enable()` — platform event-trigger helper (owner postgres, SECURITY DEFINER) executable by PUBLIC/authenticated → migration 0012 revokes API execute (guarded; no-op where absent). Re-check after any change to the Automatic-RLS setting.
+2. Default privileges owned by `supabase_admin` grant to API roles. Not changeable from migrations and not applicable to tables our migrations create (owner `postgres`, whose defaults were verified clean). The audit now checks default privileges only for roles that own our tables; platform-role defaults are documented here instead of failing the audit. Risk to remember: any table created by `supabase_admin` (not by our migrations or the dashboard SQL editor) would receive API grants.
+Verification of the audit itself: negative controls (helper present → flagged; owner default to anon → flagged).

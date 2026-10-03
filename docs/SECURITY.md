@@ -13,7 +13,7 @@
 ## RLS test coverage today (`supabase/tests/10_rls_and_rules.sql`)
 anon, unprovisioned, disabled, viewer (read-only), scoped writer, super-admin; select/insert/update/delete/truncate negatives on masters, config, audit, counters, identity.
 **Automated classification audit** (`supabase/tests/security_audit.sql`, asserted empty in `npm run test:db`, also runnable read-only in the Supabase SQL editor): every `public` table has RLS enabled and forced; `anon` holds no table privilege and cannot execute any public function; `authenticated` has no TRUNCATE/REFERENCES/TRIGGER; any table with API grants has ≥1 policy; default privileges no longer hand out grants to API roles. Internal-only tables (`number_counter`, `audit_log` writes, `job_run` writes) have no API write grants.
-Findings fixed by it so far: default `DELETE`/`TRUNCATE` grants (D-003); extension functions exposed to `anon` (D-012).
+Findings fixed by it so far: default `DELETE`/`TRUNCATE` grants (D-003); extension functions exposed to `anon` (D-012); platform helper `rls_auto_enable` executable by API roles, found on the live project (D-016, migration 0012).
 Negative tests also cover: status/config/job tables, secret-looking `system_config` keys, immutable published config, API roles calling `app.job_start`, `system_health` for unprivileged users.
 
 ## To do before UAT
