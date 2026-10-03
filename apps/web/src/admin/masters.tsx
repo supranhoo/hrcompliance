@@ -122,8 +122,22 @@ const locationSpec: MasterSpec<LocRow> = {
   extraValidate: (v) => period(v),
 }
 
+type DocRow = AdminRow & { code: string; name: string; category: string | null; allowed_mime_types: string[]; max_size_mb: number }
+const MIME_ITEM = /^[A-Za-z0-9][A-Za-z0-9.+-]*\/[A-Za-z0-9][A-Za-z0-9.+*-]*$/
+const documentTypeSpec: MasterSpec<DocRow> = {
+  id: 'ref-document-type', title: 'Document Types', singular: 'document type', hasActive: true, readTable: 'document_type', writeTable: 'document_type', permission: MASTER_PERM,
+  select: 'id,code,name,category,allowed_mime_types,max_size_mb,is_active,row_version', searchColumns: ['code', 'name'], defaultSort: { id: 'code', desc: false },
+  filterDefs: [{ key: 'is_active', label: 'Status', options: ACTIVE_OPTIONS }, { key: 'category', label: 'Category', lov: 'DOCUMENT_CATEGORY' }], titleOf: (r) => `${r.code} · ${r.name}`,
+  columns: simple<DocRow>([{ accessorKey: 'category', header: 'Category', cell: (c) => c.getValue<string | null>() ?? '—' }, { accessorKey: 'max_size_mb', header: 'Max MB' },
+    { accessorKey: 'allowed_mime_types', header: 'Allowed files', cell: (c) => (c.getValue<string[]>() ?? []).join(', ') }]),
+  fields: [code(), { key: 'name', label: 'Name', type: 'text', required: true, max: 200 }, { key: 'category', label: 'Category', type: 'select', lov: 'DOCUMENT_CATEGORY' },
+    { key: 'allowed_mime_types', label: 'Allowed file types (MIME)', type: 'list', required: true, max: 20, itemPattern: MIME_ITEM, patternMessage: 'Use MIME types such as application/pdf, image/png', help: 'Comma separated, e.g. application/pdf, image/jpeg' },
+    { key: 'max_size_mb', label: 'Maximum file size (MB)', type: 'number', required: true, min: 1, max: 200 }, active],
+  defaults: { allowed_mime_types: 'application/pdf, image/jpeg, image/png', max_size_mb: '25' },
+}
+
 /** Reference masters served by one generic page (route /admin/reference/:kind). */
 export const REFERENCE_MASTERS = {
-  category: categorySpec, law: lawSpec, authority: authoritySpec, department: departmentSpec, entity: entitySpec, location: locationSpec,
+  category: categorySpec, 'document-type': documentTypeSpec, law: lawSpec, authority: authoritySpec, department: departmentSpec, entity: entitySpec, location: locationSpec,
 } as unknown as Record<string, MasterSpec<AdminRow>>
-export const REFERENCE_LABELS: Record<string, string> = { entity: 'Legal Entities', location: 'Locations', category: 'Compliance Categories', law: 'Laws & Acts', authority: 'Authorities', department: 'Departments' }
+export const REFERENCE_LABELS: Record<string, string> = { 'document-type': 'Document Types', entity: 'Legal Entities', location: 'Locations', category: 'Compliance Categories', law: 'Laws & Acts', authority: 'Authorities', department: 'Departments' }

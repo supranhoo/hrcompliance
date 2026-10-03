@@ -93,31 +93,54 @@ export function RuleVersionForm({ mode, row, complianceId, onDone }: { mode: 'cr
   )
 }
 
-type EvRow = { document_type_id: string; is_mandatory: boolean; document_type: { name: string; code: string } | null }
+type EvRow = { document_type_id: string; is_mandatory: boolean; validity_months: number | null; requires_verification: boolean; help_text: string | null; document_type: { name: string; code: string } | null }
+export const validityError = (t: string): string | undefined => (t.trim() === '' ? undefined : /^\d{1,3}$/.test(t.trim()) && Number(t) >= 1 && Number(t) <= 600 ? undefined : 'Validity must be 1–600 months, or blank')
+
+function EvidenceRowEditor({ row, versionId, canEdit, onChanged }: { row: EvRow; versionId: string; canEdit: boolean; onChanged: () => void }) {
+  const { notify } = useToast()
+  const [mandatory, setMandatory] = useState(row.is_mandatory); const [validity, setValidity] = useState(row.validity_months?.toString() ?? ''); const [verify, setVerify] = useState(row.requires_verification); const [help, setHelp] = useState(row.help_text ?? '')
+  const err = validityError(validity)
+  const dirty = mandatory !== row.is_mandatory || validity !== (row.validity_months?.toString() ?? '') || verify !== row.requires_verification || help !== (row.help_text ?? '')
+  async function save() {
+    if (err) return
+    const { error } = await supabase!.from('compliance_rule_evidence').update({ is_mandatory: mandatory, validity_months: validity.trim() === '' ? null : Number(validity), requires_verification: verify, help_text: help.trim() || null }).eq('rule_version_id', versionId).eq('document_type_id', row.document_type_id)
+    if (error) return notify(describeError(error), 'crit'); notify('Requirement saved', 'ok'); onChanged()
+  }
+  async function remove() { const { error } = await supabase!.from('compliance_rule_evidence').delete().eq('rule_version_id', versionId).eq('document_type_id', row.document_type_id); if (error) return notify(describeError(error), 'crit'); onChanged() }
+  if (!canEdit) return (
+    <li className="rounded border border-line p-2 text-sm"><div className="flex flex-wrap items-center gap-2"><span className="font-medium">{row.document_type?.name ?? row.document_type_id}</span><Badge tone={row.is_mandatory ? 'crit' : 'neutral'}>{row.is_mandatory ? 'Mandatory' : 'Optional'}</Badge>
+      <Badge tone="neutral">{row.requires_verification ? 'Verified by a reviewer' : 'No verification needed'}</Badge><Badge tone="neutral">{row.validity_months ? `Valid ${row.validity_months} month(s)` : 'No default expiry'}</Badge></div>{row.help_text && <p className="mt-1 text-xs text-muted">{row.help_text}</p>}</li>)
+  return (
+    <li className="space-y-2 rounded border border-line p-2 text-sm">
+      <div className="flex items-center justify-between"><span className="font-medium">{row.document_type?.name ?? row.document_type_id}</span><Button variant="ghost" onClick={() => void remove()}>Remove</Button></div>
+      <div className="grid gap-2 sm:grid-cols-3">
+        <label className="flex items-center gap-2"><input type="checkbox" checked={mandatory} onChange={(e) => setMandatory(e.target.checked)} /> Mandatory</label>
+        <label className="flex items-center gap-2"><input type="checkbox" checked={verify} onChange={(e) => setVerify(e.target.checked)} /> Needs verification</label>
+        <Field label="Default validity (months)" error={err}>{(f) => <Input {...f} inputMode="numeric" value={validity} placeholder="none" onChange={(e) => setValidity(e.target.value)} />}</Field>
+      </div>
+      <Field label="Instruction for the uploader">{(f) => <Input {...f} value={help} maxLength={500} onChange={(e) => setHelp(e.target.value)} />}</Field>
+      <div className="flex justify-end"><Button disabled={!dirty || !!err} onClick={() => void save()}>Save requirement</Button></div>
+    </li>)
+}
+
 function EvidenceTab({ row, canEdit }: { row: RuleVersionRow; canEdit: boolean }) {
   const qc = useQueryClient(); const { notify } = useToast(); const [add, setAdd] = useState('')
   const q = useQuery({ queryKey: ['rule-evidence', row.id], enabled: !!supabase, queryFn: async (): Promise<EvRow[]> => {
-    const { data, error } = await supabase!.from('compliance_rule_evidence').select('document_type_id,is_mandatory,document_type(name,code)').eq('rule_version_id', row.id); if (error) throw error
+    const { data, error } = await supabase!.from('compliance_rule_evidence').select('document_type_id,is_mandatory,validity_months,requires_verification,help_text,document_type(name,code)').eq('rule_version_id', row.id); if (error) throw error
     return (data ?? []) as unknown as EvRow[] } })
   const docs = useLookup({ table: 'document_type', value: 'id', label: 'name', filter: { is_active: true } })
-  const mut = useMutation({ mutationFn: async (fn: () => PromiseLike<{ error: unknown }>) => { const { error } = await fn(); if (error) throw error },
-    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['rule-evidence', row.id] }); void qc.invalidateQueries({ queryKey: ['page'] }); setAdd('') }, onError: (e) => notify(describeError(e), 'crit') })
+  const changed = () => { void qc.invalidateQueries({ queryKey: ['rule-evidence', row.id] }); void qc.invalidateQueries({ queryKey: ['page'] }) }
+  const ins = useMutation({ mutationFn: async () => { const { error } = await supabase!.from('compliance_rule_evidence').insert({ rule_version_id: row.id, document_type_id: add, is_mandatory: true }); if (error) throw error }, onSuccess: () => { setAdd(''); changed() }, onError: (e) => notify(describeError(e), 'crit') })
   if (q.isLoading) return <Skeleton rows={2} />; if (q.error) return <ErrorState message={(q.error as Error).message} />
   const used = new Set((q.data ?? []).map((r) => r.document_type_id))
   return (
     <div className="space-y-3">
       {!row.evidence_required && <p className="text-sm text-muted">This version does not require evidence. Tick “Evidence required” on the draft to enforce these documents.</p>}
       {(q.data ?? []).length === 0 ? <EmptyState title="No documents configured" description={row.status === 'draft' ? 'Add the documents that must support each obligation.' : undefined} /> : (
-        <ul className="space-y-2 text-sm">{q.data!.map((r) => (
-          <li key={r.document_type_id} className="flex items-center justify-between gap-2 rounded border border-line p-2">
-            <span>{r.document_type?.name ?? r.document_type_id} <Badge tone={r.is_mandatory ? 'crit' : 'neutral'}>{r.is_mandatory ? 'Mandatory' : 'Optional'}</Badge></span>
-            {canEdit && <span className="flex gap-2">
-              <Button variant="secondary" onClick={() => mut.mutate(() => supabase!.from('compliance_rule_evidence').update({ is_mandatory: !r.is_mandatory }).eq('rule_version_id', row.id).eq('document_type_id', r.document_type_id))}>{r.is_mandatory ? 'Make optional' : 'Make mandatory'}</Button>
-              <Button variant="ghost" onClick={() => mut.mutate(() => supabase!.from('compliance_rule_evidence').delete().eq('rule_version_id', row.id).eq('document_type_id', r.document_type_id))}>Remove</Button></span>}
-          </li>))}</ul>)}
+        <ul className="space-y-2">{q.data!.map((r) => <EvidenceRowEditor key={r.document_type_id + JSON.stringify([r.is_mandatory, r.validity_months, r.requires_verification, r.help_text])} row={r} versionId={row.id} canEdit={canEdit} onChanged={changed} />)}</ul>)}
       {canEdit && <div className="flex items-end gap-2"><div className="flex-1"><Field label="Add document type">{(f) => <Select {...f} value={add} placeholder="Select…" options={(docs.data ?? []).filter((o) => !used.has(o.value))} onChange={(e) => setAdd(e.target.value)} />}</Field></div>
-        <Button disabled={!add} onClick={() => mut.mutate(() => supabase!.from('compliance_rule_evidence').insert({ rule_version_id: row.id, document_type_id: add, is_mandatory: true }))}>Add</Button></div>}
-      {row.status !== 'draft' && <p className="text-xs text-muted">Evidence requirements of a published version are immutable. Create a new version to change them.</p>}
+        <Button disabled={!add} loading={ins.isPending} onClick={() => ins.mutate()}>Add</Button></div>}
+      <p className="text-xs text-muted">Validity is counted from the upload date unless the uploader gives an explicit expiry. Replacing a file creates a new version; earlier versions are kept. {row.status !== 'draft' ? 'Requirements of a published version are immutable: create a new version to change them.' : ''}</p>
     </div>
   )
 }

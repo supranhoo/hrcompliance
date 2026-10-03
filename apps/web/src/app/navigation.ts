@@ -17,6 +17,7 @@ export const NAV: NavItem[] = [
   { path: '/admin/reference/law', title: 'Laws & Acts', perm: 'master.read', group: 'Master Data' },
   { path: '/admin/reference/authority', title: 'Authorities', perm: 'master.read', group: 'Master Data' },
   { path: '/admin/reference/department', title: 'Departments', perm: 'master.read', group: 'Master Data' },
+  { path: '/admin/reference/document-type', title: 'Document Types', perm: 'master.read', group: 'Master Data' },
   { path: '/admin/reference/category', title: 'Compliance Categories', perm: 'compliance.read', group: 'Master Data' },
   { path: '/admin/lov', title: 'Lists (LOV)', perm: 'config.read', group: 'Administration' },
   { path: '/admin/statuses', title: 'Statuses', perm: 'config.read', group: 'Administration' },

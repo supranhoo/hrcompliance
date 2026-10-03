@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const h = vi.hoisted(() => ({
   perms: new Set<string>(['compliance.manage']),
   rpc: [] as Array<{ fn: string; args: Record<string, unknown> }>, inserts: [] as Array<{ table: string; payload: unknown }>, updates: [] as Array<{ table: string; payload: unknown; filters: Array<[string, unknown]> }>,
-  rows: [] as Array<Record<string, unknown>>,
+  rows: [] as Array<Record<string, unknown>>, evidence: [] as Array<Record<string, unknown>>,
 }))
 const base = { compliance_id: 'c1', compliance_code: 'PF-MONTHLY', compliance_name: 'PF monthly', compliance_type: 'statutory', frequency: 'monthly', period_start_month: 1, due_rule: { type: 'day_of_month', day: 15, month_offset: 1 },
   risk_level: 'high', criticality: 'critical', evidence_required: false, alert_rule_code: null, escalation_rule_code: null, effective_to: null, change_reason: null, row_version: 2, evidence_count: 0, obligation_count: 4 }
@@ -22,11 +22,11 @@ vi.mock('../lib/supabase', () => {
     from: (table: string) => ({
       insert: (payload: unknown) => { h.inserts.push({ table, payload }); return { select: () => ({ single: async () => ({ data: { id: 'n' }, error: null }) }) } },
       update: (payload: unknown) => upd(table, payload),
-      select: () => ({ eq: async () => ({ data: [], error: null }) }),
+      select: () => ({ eq: async () => ({ data: h.evidence, error: null }) }),
       delete: () => ({ eq: () => ({ eq: async () => ({ error: null }) }) }),
     }) }, appEnv: 'test' }
 })
-import { RuleVersionsPage } from './ruleVersions'
+import { RuleVersionsPage, validityError } from './ruleVersions'
 import { ToastProvider } from '../app/Toasts'
 
 const setup = () => render(<QueryClientProvider client={new QueryClient()}><ToastProvider><MemoryRouter><RuleVersionsPage /></MemoryRouter></ToastProvider></QueryClientProvider>)
@@ -34,7 +34,7 @@ const active = { ...base, id: 'v1', version: 1, status: 'active', effective_from
 const draft = { ...base, id: 'v2', version: 2, status: 'draft', effective_from: '2026-11-01' }
 
 describe('Rule Versions', () => {
-  beforeEach(() => { h.rpc.length = 0; h.inserts.length = 0; h.updates.length = 0; h.perms = new Set(['compliance.manage']); h.rows = [active, draft] })
+  beforeEach(() => { h.rpc.length = 0; h.inserts.length = 0; h.updates.length = 0; h.perms = new Set(['compliance.manage']); h.rows = [active, draft]; h.evidence = [] })
   it('lists the complete version history with a clear state for each version', () => {
     setup(); expect(screen.getByText('v1')).toBeInTheDocument(); expect(screen.getByText('v2')).toBeInTheDocument()
     expect(within(screen.getByRole('table')).getByText('Active')).toBeInTheDocument(); expect(within(screen.getByRole('table')).getByText('Draft')).toBeInTheDocument()
@@ -70,6 +70,21 @@ describe('Rule Versions', () => {
     expect(h.updates[0].payload).toMatchObject({ due_rule: { type: 'days_after_period_end', days: 7 }, period_start_month: 1, frequency: 'monthly' })
     expect(h.updates[0].payload).not.toHaveProperty('status'); expect(h.updates[0].payload).not.toHaveProperty('version')
   })
+  it('evidence requirements of a DRAFT are configurable: validity, verification, mandatory, instruction', async () => {
+    h.evidence = [{ document_type_id: 'd1', is_mandatory: true, validity_months: null, requires_verification: true, help_text: null, document_type: { name: 'Challan', code: 'CH' } }]
+    setup(); fireEvent.click(screen.getByText('v2')); fireEvent.click(await screen.findByRole('tab', { name: 'Evidence' }))
+    expect(await screen.findByText('Challan')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText(/Default validity/), { target: { value: '0' } }); expect(await screen.findByText(/1–600 months/)).toBeInTheDocument(); expect(screen.getByRole('button', { name: 'Save requirement' })).toBeDisabled()
+    fireEvent.change(screen.getByLabelText(/Default validity/), { target: { value: '12' } }); fireEvent.click(screen.getByLabelText(/Needs verification/)); fireEvent.change(screen.getByLabelText(/Instruction for the uploader/), { target: { value: 'Signed copy' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save requirement' }))
+    await waitFor(() => expect(h.updates).toHaveLength(1)); expect(h.updates[0].table).toBe('compliance_rule_evidence'); expect(h.updates[0].payload).toEqual({ is_mandatory: true, validity_months: 12, requires_verification: false, help_text: 'Signed copy' })
+  })
+  it('evidence requirements of a PUBLISHED version are shown read-only', async () => {
+    h.evidence = [{ document_type_id: 'd1', is_mandatory: true, validity_months: 12, requires_verification: false, help_text: 'Signed copy', document_type: { name: 'Challan', code: 'CH' } }]
+    setup(); fireEvent.click(screen.getByText('v1')); fireEvent.click(await screen.findByRole('tab', { name: 'Evidence' }))
+    expect(await screen.findByText('Valid 12 month(s)')).toBeInTheDocument(); expect(screen.getByText('No verification needed')).toBeInTheDocument(); expect(screen.queryByRole('button', { name: 'Save requirement' })).toBeNull(); expect(screen.getByText(/immutable/)).toBeInTheDocument()
+  })
+  it('validity input rule', () => { expect(validityError('')).toBeUndefined(); expect(validityError('12')).toBeUndefined(); expect(validityError('601')).toBeDefined(); expect(validityError('x')).toBeDefined() })
   it('read-only users see the history but no actions', async () => {
     h.perms = new Set(['compliance.read']); setup(); expect(screen.queryByRole('button', { name: 'New rule version' })).toBeNull()
     fireEvent.click(screen.getByText('v2')); await screen.findByText(/not in effect/); expect(screen.queryByRole('button', { name: 'Edit draft' })).toBeNull()

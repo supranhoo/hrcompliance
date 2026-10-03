@@ -9,6 +9,7 @@ function Control({ f, id, values, onChange, mode, aria }: { f: FieldSpec; id: st
   const common = { id, disabled: locked, ...aria }
   switch (f.type) {
     case 'textarea': return <Textarea {...common} rows={3} value={String(v ?? '')} onChange={(e) => onChange(f.key, e.target.value)} />
+    case 'list': return <Input {...common} value={String(v ?? '')} placeholder={f.placeholder ?? 'comma separated'} onChange={(e) => onChange(f.key, e.target.value)} />
     case 'number': return <Input {...common} inputMode="decimal" value={String(v ?? '')} placeholder={f.placeholder} onChange={(e) => onChange(f.key, e.target.value)} />
     case 'date': return <DatePicker {...common} value={String(v ?? '')} onChange={(e) => onChange(f.key, e.target.value)} />
     case 'select': {

@@ -2,12 +2,14 @@ import type { Option } from '../components/ui'
 
 /** Declarative description of an admin form. The same spec drives rendering, frontend validation and the payload sent to PostgREST;
  *  the database re-validates everything (constraints, triggers, RLS) - this is convenience and early feedback, never authority. */
-export type FieldType = 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select'
+export type FieldType = 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select' | 'list'
 export type Lookup = { table: string; value: string; label: string; filter?: Record<string, string | boolean>; order?: string }
 export type FieldSpec = {
   key: string; label: string; type: FieldType; required?: boolean; help?: string
   lov?: string; lookup?: Lookup; options?: Option[]
   pattern?: RegExp; patternMessage?: string; max?: number; min?: number
+  /** For type 'list' (comma separated): each item must match; max = maximum number of items. */
+  itemPattern?: RegExp
   /** Cannot be changed once the record exists (e.g. a business code). Shown read-only on edit. */
   immutable?: boolean
   /** Stored by the backend (never sent), shown read-only. */
@@ -21,7 +23,7 @@ export const emptyValues = (fields: FieldSpec[]): Values => Object.fromEntries(f
 export function valuesFromRow(fields: FieldSpec[], row: Record<string, unknown>): Values {
   return Object.fromEntries(fields.map((f) => {
     const v = row[f.key]
-    return [f.key, f.type === 'boolean' ? Boolean(v) : v === null || v === undefined ? '' : String(v)]
+    return [f.key, f.type === 'boolean' ? Boolean(v) : Array.isArray(v) ? v.join(', ') : v === null || v === undefined ? '' : String(v)]
   }))
 }
 
@@ -40,6 +42,11 @@ export function validate(fields: FieldSpec[], values: Values, mode: Mode): Recor
       if (!/^-?\d+(\.\d+)?$/.test(s)) { errors[f.key] = `${f.label} must be a number`; continue }
       if (f.min !== undefined && Number(s) < f.min) errors[f.key] = `${f.label} must be at least ${f.min}`
       else if (f.max !== undefined && Number(s) > f.max) errors[f.key] = `${f.label} must be at most ${f.max}`
+    } else if (f.type === 'list') {
+      const items = s.split(',').map((x) => x.trim()).filter(Boolean)
+      if (items.length === 0) errors[f.key] = `${f.label} is required`
+      else if (f.max !== undefined && items.length > f.max) errors[f.key] = `${f.label}: at most ${f.max} items`
+      else if (f.itemPattern && items.some((i) => !f.itemPattern!.test(i))) errors[f.key] = f.patternMessage ?? `${f.label} has an invalid item`
     } else if (f.type === 'date') {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(s) || Number.isNaN(Date.parse(s))) errors[f.key] = `${f.label} must be a valid date`
     } else {
@@ -65,6 +72,7 @@ export function toPayload(fields: FieldSpec[], values: Values, mode: Mode): Reco
     if (f.type === 'boolean') out[f.key] = Boolean(v)
     else if (isBlank(v)) out[f.key] = null
     else if (f.type === 'number') out[f.key] = Number(String(v).trim())
+    else if (f.type === 'list') out[f.key] = String(v).split(',').map((x) => x.trim()).filter(Boolean)
     else out[f.key] = String(v).trim()
   }
   return out

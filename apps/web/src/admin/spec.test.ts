@@ -46,6 +46,15 @@ describe('admin form spec', () => {
   })
 })
 
+describe('list fields (e.g. allowed MIME types)', () => {
+  const list: FieldSpec = { key: 'm', label: 'Types', type: 'list', required: true, max: 3, itemPattern: /^[a-z]+\/[a-z]+$/, patternMessage: 'bad mime' }
+  it('validates items and count; converts to an array', () => {
+    expect(validate([list], { m: '' }, 'create').m).toMatch(/required/); expect(validate([list], { m: 'pdf' }, 'create').m).toBe('bad mime')
+    expect(validate([list], { m: 'a/b, c/d, e/f, g/h' }, 'create').m).toMatch(/at most 3/); expect(validate([list], { m: 'application/pdf, image/png' }, 'create')).toEqual({})
+    expect(toPayload([list], { m: ' application/pdf , image/png ,' }, 'create')).toEqual({ m: ['application/pdf', 'image/png'] }); expect(valuesFromRow([list], { m: ['a/b', 'c/d'] })).toEqual({ m: 'a/b, c/d' })
+  })
+})
+
 describe('database error messages', () => {
   it('explains common failures in business language', () => {
     expect(describeError({ code: '23505', message: 'duplicate key' })).toMatch(/already exists/)
