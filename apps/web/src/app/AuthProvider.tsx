@@ -4,6 +4,7 @@ import type { Session } from '@supabase/supabase-js'
 import { callbackUrl, supabase } from '../lib/supabase'
 import { rememberReturnTo } from '../lib/returnTo'
 import { parseAccess, type Access } from '../lib/access'
+import type { AccessResult } from '../lib/diagnostics'
 
 type AuthState = {
   status: 'loading' | 'signed_out' | 'unauthorized' | 'ready' | 'error'
@@ -11,6 +12,9 @@ type AuthState = {
   access: Access | null
   signInWithGoogle: () => Promise<void>
   retryAccess: () => void
+  /** Refreshes the Supabase session (new JWT) and re-asks the database who we are. */
+  recheckAccess: () => Promise<void>
+  accessResult: AccessResult
   errorMessage: string | null
   signOut: () => Promise<void>
 }
@@ -31,6 +35,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const accessQ = useQuery({
     queryKey: ['access', session?.user.id],
     enabled: !!session && !!supabase,
+    // Never serve a stale answer about who the user is: an admin may provision the account at any time.
+    staleTime: 0, gcTime: 0, refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data, error } = await supabase!.rpc('my_access')
       if (error) throw error
@@ -51,6 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error
     },
     retryAccess: () => void accessQ.refetch(),
+    recheckAccess: async () => { await supabase?.auth.refreshSession(); await accessQ.refetch() },
+    accessResult: !session ? 'no_session' : accessQ.isError ? 'error' : accessQ.isSuccess ? (accessQ.data ? 'profile' : 'empty') : 'loading',
     errorMessage: accessQ.error ? (accessQ.error as Error).message : null,
     signOut: async () => { await supabase?.auth.signOut(); qc.clear() },
   }

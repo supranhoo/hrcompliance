@@ -47,6 +47,7 @@ Migration headers carry rollback guidance; data-bearing migrations (Phase 5+) mu
 | 2026-10-03 | Previous trigger commit (`47a035c`) was pushed before the owner finished saving the integration settings | No Supabase deployment evidence |
 | 2026-10-03 | **Owner screenshots (direct evidence):** Database → Migrations lists `20261003000005` … `20261003000011` as applied; Schema Visualizer shows our tables; `select` returned roles=5, jobs=7, numbering_rules=11; 32 tables owned by `postgres` | Applied: migrations 3–11 evidenced (1–2 required by them; list rows 1–4 not captured) |
 | 2026-10-03 | Live security audit: 2 rows (platform helper `rls_auto_enable`; supabase_admin default ACLs). Table-level checks clean | Fixed by migration 0012 + audit scope refinement (D-016); **0012 not yet applied until the integration deploys it** |
+| 2026-10-03 | Owner: provisioning verified correct in live DB, yet `/no-access` after sign-out/in. Root cause candidate reproduced locally (login-before-provision never links) → migration 0013 + diagnostics panel | 0013 applied? **unknown until the Migrations page lists `20261003000013`** |
 | 2026-10-03 | Owner reports integration fully saved (deploy-to-production ON, tracked branch `claude/peaceful-wozniak-gyfjaw`); fresh documentation-only commit pushed to deliver a new deployment event | **Applied? Unknown** until the validation sequence below passes |
 
 ## Post-deployment validation sequence (SQL editor, in order)

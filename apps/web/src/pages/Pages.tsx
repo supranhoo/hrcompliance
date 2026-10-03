@@ -3,6 +3,7 @@ import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../app/AuthProvider'
 import { envErrors } from '../lib/supabase'
 import { Button, EmptyState } from '../components/ui'
+import { AccessDiagnostics } from '../components/AccessDiagnostics'
 
 export function LoginPage() {
   const { status, signInWithGoogle } = useAuth()
@@ -25,13 +26,21 @@ export function LoginPage() {
 }
 
 export function NoAccessPage() {
-  const { session, signOut } = useAuth()
+  const { session, signOut, recheckAccess, accessResult } = useAuth()
+  const [busy, setBusy] = useState(false)
+  const recheck = async () => { setBusy(true); try { await recheckAccess() } finally { setBusy(false) } }
+  // If the profile appears (e.g. an admin just provisioned the account), a re-check moves the user straight in.
+  if (accessResult === 'profile') return <Navigate to="/" replace />
   return (
     <div className="grid h-full place-items-center p-4">
-      <div role="alert" className="max-w-md rounded-lg border border-line bg-white p-8">
+      <div role="alert" className="w-full max-w-md rounded-lg border border-line bg-white p-8">
         <h1 className="text-lg font-semibold text-navy">Access not provisioned</h1>
         <p className="mt-2 text-sm text-muted">{session?.user.email} is not registered for this application. Ask a Super Admin to add your account.</p>
-        <Button variant="secondary" className="mt-4" onClick={() => void signOut()}>Sign out</Button>
+        <div className="mt-4 flex gap-2">
+          <Button loading={busy} onClick={() => void recheck()}>Re-check access</Button>
+          <Button variant="secondary" onClick={() => void signOut()}>Sign out</Button>
+        </div>
+        <AccessDiagnostics />
       </div>
     </div>
   )

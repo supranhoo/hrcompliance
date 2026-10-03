@@ -21,6 +21,7 @@ run_tests() { # file marker
 }
 run_tests supabase/tests/10_rls_and_rules.sql "ALL DB TESTS PASSED"
 run_tests supabase/tests/20_platform_tests.sql "ALL PLATFORM TESTS PASSED"
+run_tests supabase/tests/30_auth_link_tests.sql "ALL AUTH LINK TESTS PASSED"
 VIOL=$("$PSQL" -qtA -F ' | ' "$URL" -f supabase/tests/security_audit.sql)
 [ -z "$VIOL" ] && echo "ok   - security audit: 0 violations across all public tables/functions" || { echo "FAIL security audit:"; echo "$VIOL"; exit 1; }
 # Concurrency: 40 parallel allocations must yield 40 distinct, gapless ids.

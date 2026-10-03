@@ -34,3 +34,27 @@ This cloud container has **no inbound public URL**, and its egress policy return
 | T7 | Sign out | back to `/login`; protected URL redirects | **not run** |
 | T8 | Dev admin before bootstrap SQL | `/no-access` (authenticated but unprovisioned) | **not run** |
 Authentication is **not** considered complete until T4–T8 pass.
+
+## Troubleshooting: signed in but sent to `/no-access`
+`/no-access` means: Google/Supabase authentication succeeded, but `public.my_access()` returned `{}` for this session. Evidence to collect (none of it is secret):
+1. **Diagnostics panel** on the `/no-access` page (expand it, press Copy): shows `accessResult` (`empty` = DB returned `{}`; `error` = the call failed), the session's user id, providers, token role and whether the token subject matches the session user.
+2. **Browser DevTools → Network → filter `my_access`**: the request's *Status* and *Response* body (do not copy Authorization headers). `{}` = no active `app_user` linked to this auth id. A 401/403/permission error = the call ran as `anon` (no/invalid session).
+3. **SQL Editor (read-only)** — compare identities:
+```sql
+select a.id as auth_id, a.email as auth_email, a.email_confirmed_at is not null as confirmed,
+       a.raw_app_meta_data ->> 'provider' as provider, a.last_sign_in_at,
+       u.id as app_user_id, u.email as app_email, u.status, u.auth_user_id,
+       (u.auth_user_id = a.id) as linked_to_this_auth_user
+from auth.users a left join public.app_user u on lower(u.email::text) = lower(a.email)
+order by a.last_sign_in_at desc nulls last;
+```
+Interpretation: `linked_to_this_auth_user = false` with `auth_user_id` pointing at a *different* auth user means two auth identities exist for the same person; migration 0013 deliberately does not take over a linked row.
+4. **Direct function test as that user** (transaction, rolled back):
+```sql
+begin;
+select set_config('request.jwt.claim.sub', '<auth_id from query 3>', true);
+set local role authenticated;
+select public.my_access();
+rollback;
+```
+Expected for the dev admin: a JSON object with `roles: ["SUPER_ADMIN"]` and 10 permissions (`user.read`, `health.read`, `config.write`, …).
