@@ -12,3 +12,6 @@ calendar, exceptions and alerts can be exercised in the DEVELOPMENT project befo
   alert engine step by step, prints a PASS/FAIL/INFO table with timings and row counts, and shows idempotency and auto-resolution. It adds three synthetic
   event-based obligations placed on alert offsets so alert generation is demonstrable on any day.
 * Synthetic markers: every code starts with `SAMPLE`; names say "SAMPLE"; remarks say "SAMPLE event"; entity `SAMPLE-ENT`, locations `SAMPLE-LOC-A/B`.
+
+
+**Always run each script as the complete file in one execution.** Running a highlighted fragment in the SQL editor breaks PL/pgSQL (`syntax error at or near ","` from `select ... into a, b` outside a `DO` block) and loses the session temp table. Paste the whole file into an empty tab.

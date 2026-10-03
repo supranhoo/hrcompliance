@@ -20,7 +20,7 @@ on conflict (key) do update set value = excluded.value;
 What it creates (all codes start `SAMPLE`): entity `SAMPLE-ENT`; locations `SAMPLE-LOC-A` (plant, 120 employees) and `SAMPLE-LOC-B` (office, 15); three compliances (monthly with mandatory evidence, quarterly applicable only where 50+ employees, event-based 30 days); three licences (expired, expiring in 15 days, valid); default owner = you.
 
 ## Part 2 — Engines, step by step (this is the "prove it before scheduling" gate)
-Run `supabase/dev-samples/uat_engine_demo.sql`. Expect ~17 rows, every `result` = PASS (INFO rows must explain themselves), last row `7. OVERALL … PASS`.
+Run `supabase/dev-samples/uat_engine_demo.sql` **as the complete file in one execution** (open the file, copy ALL of it, paste into an empty SQL-editor tab, press Run; never run a highlighted fragment — a fragment fails with `syntax error at or near ","` because the PL/pgSQL `DO` blocks and the temp table only work as a whole). Expect ~17 rows, every `result` = PASS (INFO rows must explain themselves), last row `7. OVERALL … PASS`.
 Record for each engine: **elapsed_ms** and the row counts in `detail`:
 | Row | What it proves |
 |---|---|

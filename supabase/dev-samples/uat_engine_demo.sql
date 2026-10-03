@@ -2,6 +2,11 @@
 -- Runs the generator, exception detector and alert engine step by step, records elapsed time and affected-row counts, and prints one
 -- result table at the end. It changes only synthetic SAMPLE obligations (it completes one overdue SAMPLE obligation to show auto-resolution).
 -- PASS/FAIL are decided by the script; INFO means the step could not demonstrate the behaviour (explained in detail) - it is never hidden.
+-- !! RUN THE COMPLETE FILE, TOP TO BOTTOM, IN ONE EXECUTION. !! In the Supabase SQL editor: click into the editor, select all (Ctrl/Cmd+A) or
+-- select nothing, then Run. Do NOT run a highlighted fragment: the statements below are PL/pgSQL (inside DO blocks) and use a session temp table
+-- that exist only when the whole file runs. A fragment such as "select ... into lb, hz" run outside its DO block fails with
+-- 'syntax error at or near ","' (outside PL/pgSQL, SELECT ... INTO means 'create table' and takes one name). That error means partial execution,
+-- not a database fault.
 -- Safe to re-run: engines are idempotent; steps that need a fresh state report INFO instead of failing.
 -- SAFETY GUARD: refuses to run unless this database is explicitly labelled DEVELOPMENT. Set it once, by hand, in the dev project only:
 --   insert into public.system_config (key, value, description) values ('environment.name', '"development"', 'Environment label') on conflict (key) do update set value = excluded.value;
@@ -16,22 +21,21 @@ create temp table _demo (n serial primary key, step text, result text, elapsed_m
 do $$
 declare
   t0 timestamptz; ms numeric; r jsonb; r2 jsonb;
-  inst0 bigint; inst1 bigint; exc0 bigint; exc1 bigint; ntf0 bigint; ntf1 bigint; dups bigint; lb int; hz int;
+  inst0 bigint; inst1 bigint; exc0 bigint; exc1 bigint; ntf0 bigint; ntf1 bigint; dups bigint; hz int;
   v_inst uuid; v_overdue_exc uuid; n_other bigint;
   non_sample bigint;
 begin
   if coalesce((select value #>> '{}' from public.system_config where key = 'environment.name'), '') <> 'development' then
     raise exception 'REFUSED: this database is not labelled development (system_config environment.name).';
   end if;
-  if (select count(*) from public.compliance_master where code like 'SAMPLE-%') < 2 then
+  if (select count(*) from public.compliance_master where code like 'SAMPLE-%') < 3 then
     raise exception 'Load supabase/dev-samples/sample_compliance.sql first (SAMPLE masters not found)';
   end if;
   select count(*) into non_sample from public.compliance_master where code not like 'SAMPLE-%' and is_active;
   insert into _demo(step, result, detail) values ('0. precondition', case when non_sample = 0 then 'PASS' else 'INFO' end,
-    jsonb_build_object('sample_compliances', 2, 'non_sample_active_compliances', non_sample,
+    jsonb_build_object('sample_compliances', (select count(*) from public.compliance_master where code like 'SAMPLE-%'), 'non_sample_active_compliances', non_sample,
       'note', case when non_sample = 0 then 'only synthetic data is active: engine counts below are sample-only' else 'real masters are active: engine counts include them (the engines act on ALL active data)' end));
-  select coalesce((select (value #>> '{}')::int from public.system_config where key = 'compliance.generation_lookback_days'), 0),
-         coalesce((select (value #>> '{}')::int from public.system_config where key = 'compliance.generation_horizon_days'), 60) into lb, hz;
+  select coalesce((select (value #>> '{}')::int from public.system_config where key = 'compliance.generation_horizon_days'), 60) into hz;
 
   select count(*) into inst0 from public.compliance_instance;
   select count(*) into exc0 from public.exception;

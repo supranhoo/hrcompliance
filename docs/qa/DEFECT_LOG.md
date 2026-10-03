@@ -17,3 +17,5 @@ Status: Open · Decision pending · Fix planned (migration/commit) · Fixed (ver
 | ID | Date | UAT case | Sev | Observed (exact text/screenshot) | Expected | Reproduction | Status | Fix ref |
 |---|---|---|---|---|---|---|---|---|
 | L-001 | | | | | | | | |
+
+| U-001 | S4 (UAT script) | `uat_engine_demo.sql` | Live run failed `ERROR 42601 syntax error at or near ","` at `select ... into lb, hz` | Reproduced on PostgreSQL 16 by running that statement alone, outside its `DO` block: plain SQL treats `SELECT … INTO` as `CREATE TABLE AS` (one name). The full file ran clean, so the cause was a partially-selected run in the SQL editor, not the database or PG17 | Fixed in the script (single assignment `… into hz`, unused `lb` removed, stale sample count made dynamic, run-whole-file warning added to the header, README and runbook). No migration or schema change |
