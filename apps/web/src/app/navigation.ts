@@ -24,6 +24,7 @@ export const NAV: NavItem[] = [
   { path: '/admin/lov', title: 'Lists (LOV)', perm: 'config.read', group: 'Administration' },
   { path: '/admin/statuses', title: 'Statuses', perm: 'config.read', group: 'Administration' },
   { path: '/admin/settings', title: 'Settings', perm: 'config.read', group: 'Administration' },
+  { path: '/admin/imports', title: 'Imports', perm: 'import.read', group: 'Administration' },
   { path: '/admin/users', title: 'Users', perm: 'user.read', group: 'Administration' },
   { path: '/admin/system-health', title: 'System Health', perm: 'health.read', group: 'Administration' },
 ]

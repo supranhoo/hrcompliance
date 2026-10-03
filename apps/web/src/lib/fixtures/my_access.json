@@ -5,7 +5,7 @@
     ],
     "scopes": [
     ],
-    "user_id": "0efd9128-8f99-4a5a-8bb5-d157c717ff9d",
+    "user_id": "bb0e8d99-c6fb-49b0-9cfa-4a12aa33ed63",
     "full_name": "Admin",
     "scope_all": true,
     "permissions": [
@@ -21,6 +21,8 @@
         "exception.read",
         "exception.write",
         "health.read",
+        "import.manage",
+        "import.read",
         "job.manage",
         "job.read",
         "licence.read",

@@ -85,3 +85,9 @@ Business tables get `custom jsonb not null default '{}'` (+ GIN index) **in the 
 Business-id formats: `CMP-2026-000001`, `LIC-000001`, `EVD-2026-000001`, `EXC-2026-000001`, allocated transactionally by `app.assign_business_id` → `app.next_business_id`.
 
 Not yet modelled (by dependency order): employee/contractor masters, contractor compliance & bills, GRC/ESIC/disciplinary/liaison, communications, import batches, saved reports, SLA designer tables (SLA rules live in `config_definition` until their modules exist).
+
+
+## Master Data Administration and Import (migrations 0026–0031)
+Tables added: `import_template`, `import_batch`, `import_row` (48 tables). Views added: `v_compliance_master`, `v_compliance_rule_version`, `v_applicability`, `v_compliance_coverage`, `v_alert_rule`,
+`v_alert_routing_issue`, `v_compliance_superseded` (12 views). Columns added: `compliance_instance.human_touched_at/superseded_*` (0025), `compliance_rule_evidence.validity_months/requires_verification/help_text` (0029),
+`status_definition.is_system` (0028). Permissions added: `import.read`, `import.manage` (22). See docs/MASTER_DATA_ADMIN.md and docs/IMPORT_FRAMEWORK.md.

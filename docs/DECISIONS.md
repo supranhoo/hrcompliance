@@ -127,3 +127,12 @@ Alert timing, due-soon, licence thresholds, grace, reason-required transitions a
 * The idempotency key is now a partial unique index among non-superseded rows. 'superseded' has no UI transition; only the trusted reconciliation can set it (trusted-context GUC + non-API role).
 * `v_compliance_instance` and `v_evidence_requirement` exclude superseded rows (registers, calendar, dashboard, evidence); `v_compliance_superseded` shows the history; exception detection ignores them.
 * Not yet covered (follow-on): applicability changes superseding obligations that stop being applicable.
+
+## D-034 Master Data Administration: the screens are an alternative entry path, not a parallel model (migrations 0026–0030)
+Admin screens write through PostgREST under the user's JWT to the same tables (RLS, triggers, audit unchanged). Backend additions are minimal and domain-driven: stable master identity, rule-version
+clone/discard RPCs (activation stays `compliance_activate_rule_version`, F-2 intact), applicability replace/end RPCs, read models, LOV/status/settings guards, evidence-requirement configuration
+(validity, verification, instructions), alert-rule/routing read models. See docs/MASTER_DATA_ADMIN.md.
+
+## D-035 Generic Import Framework (migration 0031)
+Imports run as the user (SECURITY INVOKER) through the real write path; validation includes a rolled-back dry run so the database's own rules decide; batches are idempotent by file hash; no BFCL mappings.
+Rejected alternatives: SECURITY DEFINER import with a parallel validation copy (would bypass RLS and drift from the screens); per-row side-door handlers. See docs/IMPORT_FRAMEWORK.md.
