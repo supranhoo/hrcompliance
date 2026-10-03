@@ -32,5 +32,5 @@ describe('Job Monitor', () => {
     fireEvent.change(screen.getByLabelText(/Reason for disabling/), { target: { value: 'maintenance' } }); fireEvent.click(screen.getByRole('button', { name: 'Disable job' }))
     await waitFor(() => expect(h.rpc).toHaveLength(1)); expect(h.rpc[0]).toEqual({ fn: 'job_set_enabled', args: { p_code: 'compliance_generation', p_enabled: false, p_reason: 'maintenance' } })
   })
-  it('read-only users cannot change jobs', async () => { h.perms = new Set(['job.read']); wrap(); fireEvent.click(await screen.findByText('Compliance generation')); await screen.findByText('Reason for disabling', { exact: false }).catch(() => null); await screen.findByText('Failures (24h)'); expect(screen.queryByRole('button', { name: 'Disable job' })).toBeNull() })
+  it('read-only users cannot change jobs', async () => { h.perms = new Set(['job.read']); wrap(); fireEvent.click(await screen.findByText('Compliance generation')); await screen.findByText('Failures (24h)'); expect(screen.queryByRole('button', { name: 'Disable job' })).toBeNull() })
 })

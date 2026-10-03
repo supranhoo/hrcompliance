@@ -1,6 +1,6 @@
-# Proposed `pg_cron` schedules (NOT ENABLED — owner approval required)
+# `pg_cron` schedules — APPROVED by the owner (D-036), NOT ENABLED
 
-`pg_cron` is **off** in `bfcl-hrc-dev`. Nothing here is scheduled. This document lists the schedules already seeded in `job_definition.schedule_cron` (times are **UTC**) so the owner can approve, change or reject each one. No schedule is activated until the owner approves it in writing.
+`pg_cron` is **off** in `bfcl-hrc-dev`. Nothing here is scheduled. The owner approved these times on 2026-10-03 (daily including weekends; the last four as placeholders only). Scheduling is still blocked by the safeguards below. This document lists the schedules already seeded in `job_definition.schedule_cron` (times are **UTC**) so the owner can approve, change or reject each one. No schedule is activated until the owner approves it in writing.
 
 | Job | Proposed cron (UTC) | Approx. IST | Runner | Notes |
 |---|---|---|---|---|
@@ -12,7 +12,10 @@
 | communication_followup | `15 2 * * *` | 07:45 | none yet | No runner exists. |
 | housekeeping | `0 3 * * 0` | Sun 08:30 | none yet | No runner exists. |
 
-## Decisions the owner must make
+## Approval and gates (D-036)
+Approved exactly as listed. Rollout gates, all required before any `cron.schedule(...)` call: (1) migration 0032 live-verified; (2) Job Monitor verified live (checklist in docs/UAT_PHASE6_RUNBOOK.md); (3) in production, `UNROUTABLE_ESCALATION` recipients configured and routing validation passing. First rollout: only compliance_generation, exception_generation and alert_generation. The other four stay disabled/unscheduled until runners and tests exist.
+
+## Original questions (answered)
 1. Approve or change each time (the order matters: generation → exceptions → alerts).
 2. Confirm that only jobs that have a runner are scheduled first (the three above).
 3. Confirm the environment: production must not run until `UNROUTABLE_ESCALATION` recipients are configured (D-001).

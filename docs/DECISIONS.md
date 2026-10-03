@@ -136,3 +136,9 @@ clone/discard RPCs (activation stays `compliance_activate_rule_version`, F-2 int
 ## D-035 Generic Import Framework (migration 0031)
 Imports run as the user (SECURITY INVOKER) through the real write path; validation includes a rolled-back dry run so the database's own rules decide; batches are idempotent by file hash; no BFCL mappings.
 Rejected alternatives: SECURITY DEFINER import with a parallel validation copy (would bypass RLS and drift from the screens); per-row side-door handlers. See docs/IMPORT_FRAMEWORK.md.
+
+## D-036 Scheduler approval (owner, 2026-10-03) — approved, NOT enabled
+Approved daily (incl. weekends), UTC cron, exactly as proposed in docs/CRON_PROPOSAL.md: compliance_generation 06:30 IST, exception_generation 07:15 IST, alert_generation 07:30 IST.
+Approved as placeholders only (not to be scheduled until their runners and tests exist): due_status_refresh 06:45, licence_expiry_detection 07:00, communication_followup 07:45, housekeeping Sunday 08:30 IST.
+Safeguards: `pg_cron` stays OFF and no `cron.schedule(...)` exists until (1) migration 0032 is live-verified, (2) the Job Monitor is verified live, (3) in production `UNROUTABLE_ESCALATION` recipients are configured and routing validation passes.
+First rollout enables only the three jobs that have runners; the other four stay disabled / unscheduled.

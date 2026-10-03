@@ -51,7 +51,7 @@ describe('New import', () => {
     await waitFor(() => expect(h.rpc.filter((r) => r.fn === 'import_validate')).toHaveLength(1))
     const stage = h.rpc.find((r) => r.fn === 'import_stage')!.args
     expect(stage).toMatchObject({ p_template: 'department', p_file_name: 'depts.csv', p_on_duplicate: 'update', p_rows: [{ code: 'HR', name: 'Human Resources', is_active: 'yes' }, { code: 'FIN', name: 'Finance', is_active: 'no' }] })
-    expect(String(stage.p_file_hash)).toMatch(/^[0-9a-f]{64}$/); expect(screen.getByTestId('loc')).toHaveTextContent('/admin/imports/batch-1')
+    expect(String(stage.p_file_hash)).toMatch(/^[0-9a-f]{64}$/); await waitFor(() => expect(screen.getByTestId('loc')).toHaveTextContent('/admin/imports/batch-1'))
   })
   it('refuses a file with a missing required column or too many rows, before anything is sent', async () => {
     wrap('/admin/imports/new'); fireEvent.change(await screen.findByLabelText(/What are you importing/), { target: { value: 'department' } })
