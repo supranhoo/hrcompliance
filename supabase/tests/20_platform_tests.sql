@@ -97,7 +97,8 @@ select test.denied('viewer cannot write job_run', $$insert into public.job_run(j
 select test.logout();
 select test.login('headhr@bfcl.test');
 select test.eq('head hr reads job runs', test.count('select * from public.job_run') >= 3, true);
-select test.denied('head hr cannot edit job definition', $$update public.job_definition set is_enabled=false where code='housekeeping'$$ || '; select 1/0');
+update public.job_definition set is_enabled=false where code='housekeeping';   -- RLS filters the row: 0 rows updated, no error
+select test.eq('head hr cannot edit job definition (value unchanged)', (select is_enabled from public.job_definition where code='housekeeping'), true);
 select test.logout();
 
 -- ---------- system health ----------
