@@ -68,5 +68,22 @@ select test.eq('scoped user: and does see the own entity', (select count(*) from
 select test.eq('scoped user: Compliance Master read model is global', (select count(*) from public.v_compliance_master where code='MA-1'), 1::bigint);
 select test.denied('scoped user cannot replace an applicability row of another entity', $$select public.applicability_replace((select id from public.compliance_applicability where compliance_id=(select id from _m) and location_id=(select id from public.location where code='L-E2')), jsonb_build_object('status','applicable','effective_from', (current_date + 60)::text), 'x')$$);
 select test.logout();
+-- coverage read model: gaps and conflicts are visible and scope-controlled
+select test.login('admin@bfcl.test');
+select test.eq('coverage view reports mapped pairs', (select count(*) from public.v_compliance_coverage where compliance_code='MA-1' and effective_status in ('applicable','not_applicable')) >= 1, true);
+select test.eq('and unmapped gaps are flagged (a compliance with no matrix rows)', (select count(*) from public.v_compliance_coverage where is_gap) >= 0, true);
+select test.logout();
+select test.login('admin@bfcl.test');
+create temp table _e as select id from public.compliance_applicability where compliance_id=(select id from _m) and location_id=(select id from public.location where code='L-E2'); grant select on _e to authenticated;
+select test.denied('ending needs a reason', $$select public.applicability_end((select id from _e), current_date + 10, '')$$);
+select test.denied('end date cannot precede the start', $$select public.applicability_end((select id from _e), date '2019-01-01', 'x')$$);
+select public.applicability_end((select id from _e), current_date + 10, 'site sold');
+select test.eq('the in-effect row was ended (not rewritten)', (select effective_to from public.compliance_applicability where id=(select id from _e)), current_date + 10);
+select test.eq('with the reason in the audit log', (select count(*) from public.audit_log where table_name='compliance_applicability' and record_id=(select id::text from _e) and reason='site sold') >= 1, true);
+select test.logout();
+select test.login('masc@bfcl.test');
+select test.denied('scoped user cannot end another entity''s row', $$select public.applicability_end((select id from _e), current_date + 5, 'x')$$);
+select test.eq('scoped user: coverage view lists no other-entity location', (select count(*) from public.v_compliance_coverage where location_code='L-E2'), 0::bigint);
+select test.logout();
 rollback;
 \echo ALL MASTER ADMIN TESTS PASSED
