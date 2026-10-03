@@ -30,6 +30,13 @@ VIOL=$("$PSQL" -qtA -F ' | ' "$URL" -f supabase/tests/security_audit.sql)
 seq 1 40 | xargs -P 20 -I{} "$PSQL" -qtA "$URL" -c "select app.next_business_id('GRC', date '2026-01-01')" > "${TMPDIR:-/tmp}/ids_$$.txt"
 U=$(sort -u "${TMPDIR:-/tmp}/ids_$$.txt" | wc -l); M=$(sort "${TMPDIR:-/tmp}/ids_$$.txt" | tail -1)
 rm -f "${TMPDIR:-/tmp}/ids_$$.txt"
+# Concurrency: 8 parallel generator runs over the same window must insert each obligation exactly once (idempotency key).
+# Fixture state (43_generator_tests): GEN-1 monthly applies to 2 locations from Aug 2026 -> 2 x 3 months = 6 obligations in Q1 2028.
+GEN=$(seq 1 8 | xargs -P 8 -I{} "$PSQL" -qtA "$URL" -c "select (app.generate_compliance_instances(date '2028-01-01', date '2028-03-31') ->> 'inserted')::int")
+SUM=$(echo "$GEN" | awk '{s+=$1} END {print s}')
+ROWS=$("$PSQL" -qtA "$URL" -c "select count(*) from public.compliance_instance where period_start between date '2028-01-01' and date '2028-03-31'")
+DUPS=$("$PSQL" -qtA "$URL" -c "select count(*) from (select 1 from public.compliance_instance group by compliance_id, location_id, period_start having count(*) > 1) d")
+[ "$SUM" = "6" ] && [ "$ROWS" = "6" ] && [ "$DUPS" = "0" ] && echo "ok   - 8 concurrent generator runs: 6 obligations inserted exactly once, 0 duplicates" || { echo "FAIL generator concurrency: inserted_sum=$SUM rows=$ROWS duplicates=$DUPS"; exit 1; }
 # Concurrency: 20 parallel claims of the same job key -> exactly one runner.
 seq 1 20 | xargs -P 20 -I{} "$PSQL" -qtA "$URL" -c "select should_run from app.job_start('compliance_generation','2026-10')" > "${TMPDIR:-/tmp}/jobs_$$.txt"
 T=$(grep -c '^t$' "${TMPDIR:-/tmp}/jobs_$$.txt"); rm -f "${TMPDIR:-/tmp}/jobs_$$.txt"
