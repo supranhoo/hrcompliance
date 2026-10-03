@@ -1,0 +1,35 @@
+[
+    {
+        "status": "not_applicable",
+        "due_date": "2026-02-20",
+        "due_state": "not_applicable",
+        "risk_level": "high",
+        "instance_id": "12f53047-c6bf-472d-83ce-6d062ec90df3",
+        "instance_no": "CMP-2026-000003",
+        "location_code": "L-E1",
+        "compliance_code": "GEN-1",
+        "compliance_name": "Generator sample monthly"
+    },
+    {
+        "status": "not_applicable",
+        "due_date": "2026-03-20",
+        "due_state": "not_applicable",
+        "risk_level": "high",
+        "instance_id": "446c8f67-1fe3-420a-9958-d45704b5727e",
+        "instance_no": "CMP-2026-000004",
+        "location_code": "L-E1",
+        "compliance_code": "GEN-1",
+        "compliance_name": "Generator sample monthly"
+    },
+    {
+        "status": "not_applicable",
+        "due_date": "2026-04-20",
+        "due_state": "not_applicable",
+        "risk_level": "high",
+        "instance_id": "c5fd6c0c-e26a-41e6-a9d7-b804276168c3",
+        "instance_no": "CMP-2026-000005",
+        "location_code": "L-E1",
+        "compliance_code": "GEN-1",
+        "compliance_name": "Generator sample monthly"
+    }
+]

@@ -1,0 +1,33 @@
+{
+    "email": "admin@bfcl.test",
+    "roles": [
+        "SUPER_ADMIN"
+    ],
+    "scopes": [
+    ],
+    "user_id": "0efd9128-8f99-4a5a-8bb5-d157c717ff9d",
+    "full_name": "Admin",
+    "scope_all": true,
+    "permissions": [
+        "audit.read",
+        "compliance.manage",
+        "compliance.read",
+        "compliance.write",
+        "config.read",
+        "config.write",
+        "evidence.read",
+        "evidence.verify",
+        "evidence.write",
+        "exception.read",
+        "exception.write",
+        "health.read",
+        "job.manage",
+        "job.read",
+        "licence.read",
+        "licence.write",
+        "master.read",
+        "master.write",
+        "user.admin",
+        "user.read"
+    ]
+}

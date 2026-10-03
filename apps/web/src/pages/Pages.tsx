@@ -53,12 +53,3 @@ export function UnauthorizedPage() {
 export function NotFoundPage() {
   return <div className="grid min-h-[50vh] place-items-center"><EmptyState title="Page not found" description="The page you requested does not exist." action={<Link className="text-sm text-blue underline" to="/">Go to dashboard</Link>} /></div>
 }
-
-export function DashboardPage() {
-  return (
-    <section>
-      <h1 className="text-xl font-semibold text-navy">Executive Dashboard</h1>
-      <div className="mt-4"><EmptyState title="No compliance data yet" description="KPIs are computed server-side from authoritative data once the compliance core exists (Phase 6). Nothing is shown until then rather than placeholder numbers." /></div>
-    </section>
-  )
-}

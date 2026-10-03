@@ -8,7 +8,10 @@ import { RequireAuth, RequirePermission } from './app/RequireAccess'
 import { Layout } from './app/Layout'
 import { ToastProvider } from './app/Toasts'
 import { ErrorBoundary } from './app/ErrorBoundary'
-import { DashboardPage, LoginPage, NoAccessPage, NotFoundPage, UnauthorizedPage } from './pages/Pages'
+import { LoginPage, NoAccessPage, NotFoundPage, UnauthorizedPage } from './pages/Pages'
+import { DashboardPage } from './pages/DashboardPage'
+import { CalendarPage } from './pages/CalendarPage'
+import { CompliancePage, EvidencePage, ExceptionsPage, LicencesPage } from './pages/Registers'
 import { AuthCallbackPage } from './pages/AuthCallbackPage'
 import { UsersPage } from './pages/UsersPage'
 import { SystemHealthPage } from './pages/SystemHealthPage'
@@ -30,6 +33,10 @@ createRoot(document.getElementById('root')!).render(
                   <Route element={<Layout />}>
                     <Route index element={<DashboardPage />} />
                     <Route path="unauthorized" element={<UnauthorizedPage />} />
+                    <Route element={<RequirePermission perm="compliance.read" />}><Route path="compliance" element={<CompliancePage />} /><Route path="calendar" element={<CalendarPage />} /></Route>
+                    <Route element={<RequirePermission perm="exception.read" />}><Route path="exceptions" element={<ExceptionsPage />} /></Route>
+                    <Route element={<RequirePermission perm="licence.read" />}><Route path="licences" element={<LicencesPage />} /></Route>
+                    <Route element={<RequirePermission perm="evidence.read" />}><Route path="evidence" element={<EvidencePage />} /></Route>
                     <Route element={<RequirePermission perm="user.read" />}><Route path="admin/users" element={<UsersPage />} /></Route>
                     <Route element={<RequirePermission perm="health.read" />}><Route path="admin/system-health" element={<SystemHealthPage />} /></Route>
                     <Route path="*" element={<NotFoundPage />} />

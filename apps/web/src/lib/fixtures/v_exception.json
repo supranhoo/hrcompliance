@@ -1,0 +1,23 @@
+{
+    "id": "f2469ea6-c379-4a5b-ba69-1c35305989a0",
+    "source": "auto",
+    "status": "open",
+    "age_days": 0,
+    "category": "evidence_missing",
+    "due_date": "2026-10-06",
+    "severity": "high",
+    "entity_id": "8f0a28ec-9ba7-4096-9687-68fb83ad3031",
+    "age_bucket": "0-7",
+    "licence_id": null,
+    "resolution": null,
+    "description": "Mandatory document \"Evidence doc\" is missing for CMP-2026-000064",
+    "detected_at": "2026-10-03T11:54:24.429688+00:00",
+    "evidence_id": null,
+    "location_id": "45ed8c54-d57c-41d7-bacd-841e9eb4e0fb",
+    "resolved_at": null,
+    "exception_no": "EXC-2026-000037",
+    "auto_resolved": false,
+    "owner_user_id": null,
+    "target_breached": false,
+    "compliance_instance_id": "7e7d7db4-626d-4dc7-9adc-a51b1c2c62df"
+}

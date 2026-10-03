@@ -9,7 +9,7 @@ import { cx } from '../components/ui'
 
 function Sidebar({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const { access } = useAuth()
-  const groups = ['Overview', 'Administration'] as const
+  const groups = ['Overview', 'Compliance', 'Administration'] as const
   return (
     <nav aria-label="Primary" className="flex-1 space-y-4 overflow-y-auto px-2 py-2">
       {groups.map((g) => {

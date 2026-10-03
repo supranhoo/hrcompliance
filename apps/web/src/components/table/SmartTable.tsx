@@ -114,7 +114,7 @@ export function SmartTable<T>(p: SmartTableProps<T>) {
                 <tr key={r.id} data-state={r.getIsSelected() ? 'selected' : undefined} tabIndex={p.onRowClick ? 0 : undefined}
                   onClick={() => p.onRowClick?.(r.original)} onKeyDown={(e) => { if (p.onRowClick && e.key === 'Enter') p.onRowClick(r.original) }}
                   className={cx('border-b border-line last:border-0', p.onRowClick && 'cursor-pointer hover:bg-canvas focus-visible:bg-canvas', r.getIsSelected() && 'bg-blue/5')}>
-                  {r.getVisibleCells().map((c) => <td key={c.id} className="px-3 py-2">{flexRender(c.column.columnDef.cell, c.getContext())}</td>)}
+                  {r.getVisibleCells().map((c) => <td key={c.id} className="whitespace-nowrap px-3 py-2">{flexRender(c.column.columnDef.cell, c.getContext())}</td>)}
                 </tr>
               ))}
             </tbody>

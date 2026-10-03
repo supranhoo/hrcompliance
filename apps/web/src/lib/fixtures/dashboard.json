@@ -1,0 +1,159 @@
+{
+    "evidence": {
+        "expired": 0,
+        "missing": 1,
+        "rejected": 0,
+        "pending_review": 0
+    },
+    "has_data": true,
+    "licences": {
+        "active": 8,
+        "expired": 1,
+        "by_category": {
+            "valid": 3,
+            "expired": 1,
+            "within_7": 1,
+            "no_expiry": 2,
+            "within_15": 1
+        },
+        "renewal_window_open": 3
+    },
+    "next_due": [
+        {
+            "due_date": "2026-10-03",
+            "due_state": "due_soon",
+            "risk_level": "medium",
+            "instance_no": "CMP-2026-000075",
+            "location_code": "L-E1",
+            "compliance_code": "AL-1",
+            "compliance_name": "Alert sample"
+        },
+        {
+            "due_date": "2026-10-03",
+            "due_state": "due_soon",
+            "risk_level": "medium",
+            "instance_no": "CMP-2026-000076",
+            "location_code": "L-E2",
+            "compliance_code": "AL-1",
+            "compliance_name": "Alert sample"
+        },
+        {
+            "due_date": "2026-10-03",
+            "due_state": "due_soon",
+            "risk_level": "medium",
+            "instance_no": "CMP-2026-000077",
+            "location_code": "L-E1",
+            "compliance_code": "AL-1",
+            "compliance_name": "Alert sample"
+        },
+        {
+            "due_date": "2026-10-04",
+            "due_state": "due_soon",
+            "risk_level": "medium",
+            "instance_no": "CMP-2026-000079",
+            "location_code": "L-E1",
+            "compliance_code": "AL-1",
+            "compliance_name": "Alert sample"
+        },
+        {
+            "due_date": "2026-10-05",
+            "due_state": "due_soon",
+            "risk_level": "medium",
+            "instance_no": "CMP-2026-000082",
+            "location_code": "L-E1",
+            "compliance_code": "AL-1",
+            "compliance_name": "Alert sample"
+        },
+        {
+            "due_date": "2026-10-06",
+            "due_state": "due_soon",
+            "risk_level": "medium",
+            "instance_no": "CMP-2026-000071",
+            "location_code": "L-E1",
+            "compliance_code": "AL-1",
+            "compliance_name": "Alert sample"
+        },
+        {
+            "due_date": "2026-10-06",
+            "due_state": "due_soon",
+            "risk_level": "medium",
+            "instance_no": "CMP-2026-000078",
+            "location_code": "L-E1",
+            "compliance_code": "AL-1",
+            "compliance_name": "Alert sample"
+        },
+        {
+            "due_date": "2026-10-08",
+            "due_state": "due_soon",
+            "risk_level": "medium",
+            "instance_no": "CMP-2026-000089",
+            "location_code": "L-E2",
+            "compliance_code": "AL-1",
+            "compliance_name": "Alert sample"
+        },
+        {
+            "due_date": "2026-10-23",
+            "due_state": "upcoming",
+            "risk_level": "medium",
+            "instance_no": "CMP-2026-000083",
+            "location_code": "L-E1",
+            "compliance_code": "AL-1",
+            "compliance_name": "Alert sample"
+        }
+    ],
+    "exceptions": {
+        "open": 7,
+        "by_age": {
+            "0-7": 6,
+            "31-90": 1
+        },
+        "by_category": {
+            "licence_expired": 1,
+            "evidence_missing": 1,
+            "compliance_overdue": 5
+        },
+        "by_severity": {
+            "high": 1,
+            "medium": 5,
+            "critical": 1
+        },
+        "critical_open": 1,
+        "target_breached": 1
+    },
+    "by_location": [
+        {
+            "open": 14,
+            "overdue": 4,
+            "due_soon": 6,
+            "location_code": "L-E1"
+        },
+        {
+            "open": 6,
+            "overdue": 1,
+            "due_soon": 2,
+            "location_code": "L-E2"
+        }
+    ],
+    "definitions": {
+        "overdue": "Open or in progress with a due date before today.",
+        "on_time_pct": "Completed on or before the due date as a share of obligations already due.",
+        "compliance_pct": "Completed obligations as a share of obligations already due (not applicable excluded).",
+        "upcoming_30_days": "Open or in progress due from today to 30 days ahead."
+    },
+    "obligations": {
+        "open": 20,
+        "total": 24,
+        "overdue": 5,
+        "due_soon": 8,
+        "completed": 4,
+        "due_so_far": 10,
+        "on_time_pct": 10.0,
+        "completed_late": 1,
+        "compliance_pct": 20.0,
+        "overdue_by_risk": {
+            "medium": 5
+        },
+        "upcoming_30_days": 9
+    },
+    "generated_at": "2026-10-03T11:54:25.762736+00:00"
+}

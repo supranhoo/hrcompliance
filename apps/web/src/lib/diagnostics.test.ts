@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { buildReport, decodeSafeClaims } from './diagnostics'
 import { can, parseAccess } from './access'
-import sample from './my_access.sample.json'
+import sample from './fixtures/my_access.json'
 
 const b64 = (o: object) => btoa(JSON.stringify(o)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_')
 const token = (c: object) => `${b64({ alg: 'HS256' })}.${b64(c)}.SIGNATURE_MUST_NEVER_APPEAR`
 
 describe('real my_access() payload (generated from the migrations) is accepted by the frontend', () => {
-  it('parses a SUPER_ADMIN profile into a usable Access object', () => {
+  it('parses a SUPER_ADMIN profile (generated from the live schema) into a usable Access object', () => {
     const a = parseAccess(sample)
     expect(a).not.toBeNull()
     expect(a!.roles).toEqual(['SUPER_ADMIN'])
-    for (const p of ['user.read', 'health.read', 'config.write', 'master.read']) expect(can(a, p)).toBe(true)
+    for (const p of ['user.read', 'health.read', 'config.write', 'master.read', 'compliance.read', 'compliance.manage', 'licence.read', 'evidence.verify', 'exception.write']) expect(can(a, p)).toBe(true)
   })
   it('an empty object is the ONLY thing that means "not provisioned"', () => { expect(parseAccess({})).toBeNull() })
 })

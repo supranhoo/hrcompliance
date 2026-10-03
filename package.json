@@ -1,8 +1,10 @@
 {
   "name": "bfcl-hr-compliance",
   "private": true,
-  "version": "0.2.0",
-  "workspaces": ["apps/*"],
+  "version": "0.3.0",
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "dev": "npm -w apps/web run dev",
     "build": "npm -w apps/web run build",
@@ -11,6 +13,7 @@
     "test": "npm -w apps/web run test",
     "test:db": "scripts/validation/db-test.sh",
     "check:frozen": "scripts/validation/check-frozen-migrations.sh",
-    "validate": "npm run typecheck && npm run lint && npm run test && npm run build && npm run test:db"
+    "validate": "npm run typecheck && npm run lint && npm run test && npm run build && npm run test:db",
+    "test:e2e": "node tests/e2e/ui-smoke.mjs"
   }
 }
