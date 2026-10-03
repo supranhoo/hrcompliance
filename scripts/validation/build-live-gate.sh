@@ -10,7 +10,7 @@ a = open('supabase/tests/security_audit.sql').read().strip().rstrip(';')
 a = '\n'.join(l for l in a.splitlines() if not l.startswith('-- Read-only') and not l.startswith('-- Run in CI'))
 import glob
 n = len(glob.glob('supabase/migrations/*.sql'))
-EXPECTED = {'EXP_TABLES': 48, 'EXP_VIEWS': 12, 'EXP_PERMISSIONS': 22}      # single source of truth: update here when a migration adds tables/views/permissions
+EXPECTED = {'EXP_TABLES': 48, 'EXP_VIEWS': 14, 'EXP_PERMISSIONS': 22}      # single source of truth: update here when a migration adds tables/views/permissions
 out = t.replace('@@AUDIT@@', a).replace('@@MIG_COUNT@@', str(n))
 for k, v in EXPECTED.items(): out = out.replace('@@' + k + '@@', str(v))
 print(out, end='')

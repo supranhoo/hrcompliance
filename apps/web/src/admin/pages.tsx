@@ -19,3 +19,4 @@ export const StatusesPage = () => <AdminRegister spec={statusSpec} />
 export { SettingsPage } from './SettingsPage'
 export { AlertRulesPage } from './alertRules'
 export { ExceptionConfigPage } from './exceptionConfig'
+export { JobMonitorPage } from './jobs'

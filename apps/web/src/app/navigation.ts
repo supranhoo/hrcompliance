@@ -27,6 +27,7 @@ export const NAV: NavItem[] = [
   { path: '/admin/imports', title: 'Imports', perm: 'import.read', group: 'Administration' },
   { path: '/admin/users', title: 'Users', perm: 'user.read', group: 'Administration' },
   { path: '/admin/system-health', title: 'System Health', perm: 'health.read', group: 'Administration' },
+  { path: '/admin/jobs', title: 'Job Monitor', perm: 'job.read', group: 'Administration' },
 ]
 export const TITLES: Record<string, string> = { admin: 'Administration', ...Object.fromEntries(NAV.map((n) => [n.path, n.title])) }
 
