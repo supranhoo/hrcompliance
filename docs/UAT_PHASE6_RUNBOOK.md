@@ -88,3 +88,9 @@ Anything else that is not PASS is a **new** defect: paste it verbatim, it goes i
 
 ## Evidence capture sheet (send back, one block per script)
 `script name` · timestamp · every result row exactly as shown (or a screenshot) · for the engine demo, run 1 and run 2 separately.
+
+
+## Baseline closure status (2026-10-03)
+* **Live, owner-reported — PASS:** Gate (live_gate), samples load, engine files 01–08 (OVERALL PASS, 17 obligations, 3 notifications). The full 01–08 sequence is **not** to be repeated by hand: second-pass evidence = live idempotency proofs in 02/04/06 + automated PG16/17 two-pass run (`scripts/validation/uat-modular-test.sh`). Record: `docs/LIVE_VERIFICATION.md`.
+* **Automated (CI, PG16/17) — PASS:** scope, evidence-state, ageing and rule-change scripts; headless-browser checks (see below).
+* **Remaining live-only checks:** see the consolidated list at the end of this file; the four Part-3 scripts are optional live re-confirmation and need no manual effort unless the owner wants live proof.

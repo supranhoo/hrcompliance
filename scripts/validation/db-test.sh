@@ -4,6 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 scripts/validation/check-frozen-migrations.sh
+scripts/validation/test-frozen-lock.sh
 scripts/validation/build-live-gate.sh --check
 BASE="${PGURL:-postgresql://postgres@localhost:5432}"
 DB="bfcl_test_$$"
