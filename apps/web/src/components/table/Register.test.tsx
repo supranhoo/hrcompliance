@@ -6,6 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 const table = vi.hoisted(() => ({ calls: [] as unknown[][], rows: [{ id: 'r1', name: 'Alpha' }] }))
 vi.mock('../../hooks/useServerTable', () => ({ useServerTable: (...a: unknown[]) => { table.calls.push(a); return { query: { page: 0, pageSize: 25, sort: null, search: '' }, setQuery: vi.fn(), rows: table.rows, total: table.rows.length, isLoading: false, error: null, refetch: vi.fn() } } }))
 vi.mock('../../hooks/useLookups', () => ({ useLovOptions: (s?: string) => ({ data: s === 'RISK' ? [{ value: 'high', label: 'High' }, { value: 'low', label: 'Low' }] : undefined }), useStatusOptions: () => ({ data: undefined }) }))
+vi.mock('../../admin/lookups', () => ({ useLookup: (l?: { table: string }) => ({ data: l?.table === 'module_definition' ? [{ value: 'compliance', label: 'Compliance' }] : undefined }) }))
 import { Register } from './Register'
 
 type Row = { id: string; name: string }
@@ -43,6 +44,10 @@ describe('Register', () => {
   it('Clear filters resets everything', () => {
     setup('/things?risk_level=high&due_state=overdue'); fireEvent.click(screen.getByText('Clear filters'))
     expect(screen.getByTestId('loc')).toHaveTextContent(/^\/things$/)
+  })
+  it('a filter can take its options from a database lookup (no hardcoded list)', () => {
+    render(<MemoryRouter initialEntries={['/things']}><Register<Row> id="t2" title="Things" table="v_things" select="id,name" columns={cols} getRowId={(r) => r.id} searchColumns={['name']} defaultSort={{ id: 'name', desc: false }} filterDefs={[{ key: 'module', label: 'Module', lookup: { table: 'module_definition', value: 'code', label: 'name' } }]} /></MemoryRouter>)
+    expect(Array.from((screen.getByLabelText('Module') as HTMLSelectElement).options).map((o) => o.value)).toEqual(['', 'compliance'])
   })
   it('row click opens the quick view panel', () => {
     setup('/things'); fireEvent.click(screen.getByText('Alpha')); expect(screen.getByText('detail of Alpha')).toBeInTheDocument()

@@ -31,6 +31,8 @@ export type MasterSpec<T extends AdminRow> = {
   defaults?: Values
   /** Records are deactivated, never deleted. */
   hasActive?: boolean
+  /** Per-row veto for the activate/deactivate button (e.g. system lists). The database enforces the same rule. */
+  canToggle?: (r: T) => boolean
   searchPlaceholder?: string
 }
 
@@ -68,7 +70,7 @@ function Detail<T extends AdminRow>({ spec, row, canManage, close }: { spec: Mas
             {spec.hasActive && <Badge tone={row.is_active ? 'ok' : 'neutral'}>{row.is_active ? 'Active' : 'Inactive'}</Badge>}
             <Dl rows={facts} />
             {spec.extraDetail?.(row)}
-            {canManage && <div className="flex gap-2"><Button onClick={() => setEditing(true)}>Edit</Button>{spec.hasActive && <Button variant="secondary" onClick={() => setConfirm(true)}>{row.is_active ? 'Deactivate' : 'Activate'}</Button>}</div>}
+            {canManage && <div className="flex gap-2"><Button onClick={() => setEditing(true)}>Edit</Button>{spec.hasActive && (spec.canToggle?.(row) ?? true) && <Button variant="secondary" onClick={() => setConfirm(true)}>{row.is_active ? 'Deactivate' : 'Activate'}</Button>}</div>}
           </div>) },
         { id: 'history', label: 'History', content: <AuditTab table={spec.writeTable} id={row.id} /> },
       ]} />

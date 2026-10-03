@@ -6,14 +6,16 @@ import { Button, Drawer, Select, type Option } from '../ui'
 import { useServerTable } from '../../hooks/useServerTable'
 import { useLovOptions, useStatusOptions } from '../../hooks/useLookups'
 import { filtersFromSearch } from '../../lib/urlFilters'
+import { useLookup } from '../../admin/lookups'
+import type { Lookup } from '../../admin/spec'
 import type { FilterValue, PageQuery } from '../../lib/query'
 
-export type FilterDef = { key: string; label: string; options?: Option[]; lov?: string; statusModule?: string }
+export type FilterDef = { key: string; label: string; options?: Option[]; lov?: string; statusModule?: string; lookup?: Lookup }
 export type Derived = { filters: Record<string, FilterValue>; ranges?: PageQuery['ranges'] }
 
 function FilterSelect({ def, value, onChange }: { def: FilterDef; value: string; onChange: (v: string) => void }) {
-  const lov = useLovOptions(def.lov); const st = useStatusOptions(def.statusModule)
-  const options = def.options ?? lov.data ?? st.data ?? []
+  const lov = useLovOptions(def.lov); const st = useStatusOptions(def.statusModule); const look = useLookup(def.lookup)
+  const options = def.options ?? lov.data ?? st.data ?? look.data ?? []
   const withCurrent = value && !options.some((o) => o.value === value) ? [...options, { value, label: value }] : options   // a drill-down value not in the list stays visible
   return <div className="w-44"><Select aria-label={def.label} value={value} placeholder={`${def.label}: all`} options={withCurrent} onChange={(e) => onChange(e.target.value)} /></div>
 }

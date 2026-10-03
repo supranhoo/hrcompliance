@@ -16,7 +16,7 @@ import { AuthCallbackPage } from './pages/AuthCallbackPage'
 import { UsersPage } from './pages/UsersPage'
 import { SystemHealthPage } from './pages/SystemHealthPage'
 import { NotificationsPage } from './pages/NotificationsPage'
-import { ComplianceMasterPage, ReferenceMasterPage, RuleVersionsPage, ApplicabilityPage, CoveragePage, LicenceTypesPage } from './admin/pages'
+import { ComplianceMasterPage, ReferenceMasterPage, RuleVersionsPage, ApplicabilityPage, CoveragePage, LicenceTypesPage, LovPage, StatusesPage, SettingsPage } from './admin/pages'
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30_000 } } })
 
@@ -42,6 +42,7 @@ createRoot(document.getElementById('root')!).render(
                     <Route element={<RequirePermission perm="evidence.read" />}><Route path="evidence" element={<EvidencePage />} /></Route>
                     <Route element={<RequirePermission perm="compliance.read" />}><Route path="admin/compliance-masters" element={<ComplianceMasterPage />} /><Route path="admin/rule-versions" element={<RuleVersionsPage />} /><Route path="admin/applicability" element={<ApplicabilityPage />} /><Route path="admin/applicability/coverage" element={<CoveragePage />} /></Route>
                     <Route element={<RequirePermission perm="master.read" />}><Route path="admin/reference/:kind" element={<ReferenceMasterPage />} /></Route>
+                    <Route element={<RequirePermission perm="config.read" />}><Route path="admin/lov" element={<LovPage />} /><Route path="admin/statuses" element={<StatusesPage />} /><Route path="admin/settings" element={<SettingsPage />} /></Route>
                     <Route element={<RequirePermission perm="user.read" />}><Route path="admin/users" element={<UsersPage />} /></Route>
                     <Route element={<RequirePermission perm="health.read" />}><Route path="admin/system-health" element={<SystemHealthPage />} /></Route>
                     <Route path="*" element={<NotFoundPage />} />
