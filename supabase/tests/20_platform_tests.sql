@@ -55,11 +55,11 @@ select test.denied('retired version cannot be reactivated', $$update public.conf
 select test.denied('change reason required', $$select public.config_new_version('sla_rule','GRC_DEFAULT','GRC SLA','{"days":3}','  ')$$);
 select test.denied('invalid kind rejected', $$select public.config_new_version('shell_script','X','x','{}','r')$$);
 select test.denied('non-object definition rejected', $$select public.config_new_version('sla_rule','BAD','bad','[1]','r')$$);
-select test.denied('invalid "when" rule rejected', $$select public.config_new_version('alert_rule','A1','a','{"when":{"op":"exec","field":"a","value":1}}','r')$$);
-select public.config_new_version('alert_rule','A2','a','{"when":{"op":"eq","field":"status","value":"open"},"offsets":[-30,-7,0]}','r');
+select test.denied('invalid "when" rule rejected', $$select public.config_new_version('alert_rule','A1','a','{"when":{"op":"exec","field":"a","value":1},"offsets":[0],"channels":["in_app"],"recipients":["owner"]}','r')$$);
+select public.config_new_version('alert_rule','A2','a','{"when":{"op":"eq","field":"status","value":"open"},"offsets":[-30,-7,0],"channels":["in_app"],"recipients":["owner"]}','r');
 select test.denied('no hard delete of config versions', 'delete from public.config_definition');
 select test.logout();
-select test.eq('version history audited', (select count(*) from public.audit_log where table_name='config_definition' and action='INSERT'), 3::bigint);
+select test.eq('version history audited', (select count(*) from public.audit_log where table_name='config_definition' and action='INSERT' and new_data ->> 'code' in ('GRC_DEFAULT','A2')), 3::bigint);
 
 -- ---------- jobs ----------
 select test.eq('job definitions seeded', (select count(*) from public.job_definition), 7::bigint);
