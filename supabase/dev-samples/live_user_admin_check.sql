@@ -1,0 +1,19 @@
+-- LIVE CHECK for migration 0033 (Users, roles, permissions and scope administration). READ-ONLY: one SELECT, changes nothing, safe in any environment.
+-- Supabase SQL Editor: new empty tab, paste this ENTIRE file, Run once. Last line is "-- END OF FILE".
+-- EXPECTED: every row PASS, last row OVERALL PASS. Also run supabase/tests/live_gate.sql (expects 33 migrations, 48 tables, 17 views, 23 permissions).
+with c(n, check_name, ok) as (values
+ (1, '0033: role.admin permission exists',                                exists (select 1 from public.permission where code = 'role.admin')),
+ (2, '0033: only SUPER_ADMIN holds role.admin by default (review if you changed it)', (select count(*) = 1 and bool_and(r.code = 'SUPER_ADMIN') from public.role_permission rp join public.role r on r.id = rp.role_id where rp.permission_code = 'role.admin')),
+ (3, '0033: at least one active signed-in user holds role.admin (last-admin guard baseline)', (select count(distinct u.id) >= 1 from public.app_user u join public.user_role ur on ur.user_id = u.id join public.role_permission rp on rp.role_id = ur.role_id where u.status = 'active' and u.auth_user_id is not null and rp.permission_code = 'role.admin')),
+ (4, '0033: continuity guards are installed (deferred constraint triggers)', (select count(*) = 3 from pg_trigger where tgname in ('user_role_continuity','role_permission_continuity','app_user_continuity') and tgconstraint <> 0)),
+ (5, '0033: self-lockout guards and identity guards are installed',       (select count(*) = 5 from pg_trigger where tgname in ('user_role_selflock','role_permission_selflock','app_user_selflock','role_code_immutable','app_user_identity_guard') and not tgisinternal)),
+ (6, '0033: role/permission/assignment writes are gated by role.admin in RLS', (select count(*) = 3 and bool_and(coalesce(qual, '') like '%role.admin%' and coalesce(with_check, '') like '%role.admin%') from pg_policies where schemaname = 'public' and policyname in ('role_mod','role_permission_mod','user_role_mod'))),
+ (7, '0033: admin RPCs exist and anon cannot execute them',               (select bool_and(to_regprocedure(f) is not null and not has_function_privilege('anon', f, 'execute')) from unnest(array['public.role_save(text,text,text,text[],text,boolean)','public.user_invite(text,text,text[],text)','public.user_set_roles(uuid,text[],text,boolean)','public.user_set_status(uuid,text,text,boolean)','public.user_set_scope(uuid,boolean,uuid[],uuid[],text)']) f)),
+ (8, '0033: read models exist and run as the caller (invoker)',           (select count(*) = 3 and bool_and(coalesce(c.reloptions::text, '') like '%security_invoker=true%') from pg_class c where c.relnamespace = 'public'::regnamespace and c.relname in ('v_role_admin','v_user_admin','v_user_scope'))),
+ (9, 'pg_cron must be OFF: ' || case when exists (select 1 from pg_extension where extname = 'pg_cron') then 'extension installed - confirm no jobs are scheduled' else 'not installed' end, not exists (select 1 from pg_extension where extname = 'pg_cron'))
+)
+select n, check_name, case when coalesce(ok, false) then 'PASS' else 'FAIL' end as result from c
+union all
+select 99, 'OVERALL', case when bool_and(coalesce(ok, false)) then 'PASS' else 'FAIL' end from c
+order by 1;
+-- END OF FILE

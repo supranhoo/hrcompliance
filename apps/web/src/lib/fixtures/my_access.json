@@ -5,7 +5,7 @@
     ],
     "scopes": [
     ],
-    "user_id": "bb0e8d99-c6fb-49b0-9cfa-4a12aa33ed63",
+    "user_id": "451d74ae-eac6-4e2d-a301-ff50d4233d2d",
     "full_name": "Admin",
     "scope_all": true,
     "permissions": [
@@ -29,6 +29,7 @@
         "licence.write",
         "master.read",
         "master.write",
+        "role.admin",
         "user.admin",
         "user.read"
     ]

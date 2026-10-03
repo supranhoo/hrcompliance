@@ -142,3 +142,7 @@ Approved daily (incl. weekends), UTC cron, exactly as proposed in docs/CRON_PROP
 Approved as placeholders only (not to be scheduled until their runners and tests exist): due_status_refresh 06:45, licence_expiry_detection 07:00, communication_followup 07:45, housekeeping Sunday 08:30 IST.
 Safeguards: `pg_cron` stays OFF and no `cron.schedule(...)` exists until (1) migration 0032 is live-verified, (2) the Job Monitor is verified live, (3) in production `UNROUTABLE_ESCALATION` recipients are configured and routing validation passes.
 First rollout enables only the three jobs that have runners; the other four stay disabled / unscheduled.
+
+## D-037 Access administration (migration 0033)
+New `role.admin` permission split from `user.admin`; guards are database triggers (last role administrator cannot be removed, self-lockout needs explicit confirmation, role codes and linked emails immutable); changes go through audited reason-mandatory RPCs while RLS stays on every table.
+Rejected: hardcoding "SUPER_ADMIN" checks (contradicts permission-driven access); frontend-only guards (bypassable); SECURITY DEFINER admin RPCs (would bypass RLS). Department scope deliberately not offered until access checks enforce it. See docs/ACCESS_ADMIN.md.
