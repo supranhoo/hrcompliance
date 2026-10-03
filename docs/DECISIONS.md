@@ -117,3 +117,6 @@ Alert timing, due-soon, licence thresholds, grace, reason-required transitions a
 * `public.alert_routing_validation()` lists active rules with no valid routing: error for rules flagged `"critical": true` and for a missing `UNROUTABLE_ESCALATION` in production; warning otherwise. System Health shows counts. It is the pre-activation check for production.
 * `app.job_finish` now keeps an optional warning on a succeeded run (previously cleared).
 * Super Admin is never a production recipient; the environment is read from `system_config environment.name`.
+
+## D-032 F-1 implementation (migration 0024)
+`compliance_applicability` SELECT now requires `compliance.read` AND `app.scope_ok(entity_id, location_id)` (global rows: scope_all only); `compliance_coverage()` filters pairs by scope (maintenance sessions without `auth.uid()` see all). Location master, entity master, Compliance Master and rule versions are unchanged (globally readable to authorised users). The location master is deliberately NOT scoped; sensitive location attributes, if any, go in a separate scoped extension table.

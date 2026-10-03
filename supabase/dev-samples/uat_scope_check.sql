@@ -36,7 +36,10 @@ set local role authenticated;
     ('calendar_rows_other_loc',  (select count(*)::text from public.compliance_calendar(current_date - 400, current_date + 400) where location_code <> 'SAMPLE-LOC-B')),
     ('dashboard_total',          (public.compliance_dashboard() #>> '{obligations,total}')),
     ('dashboard_locations',      (select coalesce(string_agg(x ->> 'location_code', ','), '') from jsonb_array_elements(public.compliance_dashboard() -> 'by_location') x)),
-    ('coverage_rows_other_loc',  (select count(*)::text from public.compliance_coverage() where location_code <> 'SAMPLE-LOC-B'));
+    ('coverage_rows_other_loc',  (select count(*)::text from public.compliance_coverage() where location_code <> 'SAMPLE-LOC-B')),
+    ('applicability_other_loc',  (select count(*)::text from public.compliance_applicability a join public.location l on l.id = a.location_id where l.code <> 'SAMPLE-LOC-B')),
+    ('locations_visible',        (select count(*)::text from public.location where code like 'SAMPLE-LOC-%')),
+    ('masters_visible',          (select count(*)::text from public.compliance_master where code like 'SAMPLE-%'));
   do $w$ begin
     begin
       perform public.compliance_set_status((select (current_setting('uat.other_instance', true))::uuid), 'in_progress');
@@ -66,11 +69,16 @@ from (values
   ('cannot change the status of an obligation at another location', 'update_other_location', 'DENIED%'),
   ('cannot create a licence at another location', 'create_licence_other_location', 'DENIED%')
 ) c(name, k, expected);
--- CONFIGURATION-LEVEL DATA IS NOT SCOPE-LIMITED BY DESIGN (D-020): locations, compliance masters and the applicability matrix are readable by every holder of the
--- read permission (they feed pick-lists/filters). The coverage report is derived from them, so it lists other locations. Reported as INFO, not hidden: see
--- docs/DEFAULTS_DECISIONS.md section F (owner decision F1: accept, or restrict applicability/coverage reads to scope).
+-- F-1 (owner decision, migration 0024): Compliance Master, rule versions and the base LOCATION MASTER are globally readable; the Applicability Matrix and the
+-- coverage report are scope-controlled. Both halves are graded below (before 0024 the coverage/applicability checks FAIL on purpose).
 insert into _scope (check_name, expected, actual, result)
-select 'coverage report lists other locations (design: configuration data readable regardless of scope - owner decision F1)', 'informational', (select v from _vis where k = 'coverage_rows_other_loc') || ' other-location rows visible', 'INFO';
+select 'F-1: applicability matrix shows no other-location rows', '0', (select v from _vis where k = 'applicability_other_loc'), case when (select v from _vis where k = 'applicability_other_loc') = '0' then 'PASS' else 'FAIL' end;
+insert into _scope (check_name, expected, actual, result)
+select 'F-1: base Location Master is globally readable (both sample locations)', '2', (select v from _vis where k = 'locations_visible'), case when (select v from _vis where k = 'locations_visible') = '2' then 'PASS' else 'FAIL' end;
+insert into _scope (check_name, expected, actual, result)
+select 'F-1: Compliance Master is globally readable (3 sample compliances)', '3', (select v from _vis where k = 'masters_visible'), case when (select v from _vis where k = 'masters_visible') = '3' then 'PASS' else 'FAIL' end;
+insert into _scope (check_name, expected, actual, result)
+select 'F-1: coverage report lists no other-location rows', '0', (select v from _vis where k = 'coverage_rows_other_loc'), case when (select v from _vis where k = 'coverage_rows_other_loc') = '0' then 'PASS' else 'FAIL' end;
 insert into _scope (check_name, expected, actual, result)
 select 'positive control: the scope is not simply empty', '> 0', (select v from _vis where k = 'instances_visible'), case when (select v::int from _vis where k = 'instances_visible') > 0 then 'PASS' else 'FAIL' end;
 insert into _scope (check_name, expected, actual, result)

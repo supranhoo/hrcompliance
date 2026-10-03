@@ -8,7 +8,9 @@ python3 - > "$TMP" <<'PY'
 t = open('supabase/tests/live_gate.template.sql').read()
 a = open('supabase/tests/security_audit.sql').read().strip().rstrip(';')
 a = '\n'.join(l for l in a.splitlines() if not l.startswith('-- Read-only') and not l.startswith('-- Run in CI'))
-print(t.replace('@@AUDIT@@', a), end='')
+import glob
+n = len(glob.glob('supabase/migrations/*.sql'))
+print(t.replace('@@AUDIT@@', a).replace('@@MIG_COUNT@@', str(n)), end='')
 PY
 if [ "${1:-}" = "--check" ]; then
   cmp -s "$TMP" supabase/tests/live_gate.sql && echo "ok   - live_gate.sql is up to date with security_audit.sql" || { echo "FAIL live_gate.sql is stale: run scripts/validation/build-live-gate.sh"; exit 1; }

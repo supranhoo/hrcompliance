@@ -118,9 +118,11 @@ select test.logout();
 
 -- ---------- access + scope ----------
 select test.login('viewer@bfcl.test');
-select test.eq('viewer can read matrix', test.count('select * from public.compliance_applicability') > 0, true);
+select test.eq('viewer without any scope sees no matrix rows (F-1: applicability is scope-controlled; fail closed)', test.count('select * from public.compliance_applicability'), 0::bigint);
 select test.denied('viewer cannot write matrix', $$insert into public.compliance_applicability(compliance_id,location_id,status,effective_from) values ((select id from public.compliance_master limit 1), (select id from public.location limit 1), 'applicable', date '2026-01-01')$$);
-select test.eq('viewer can read coverage', test.count('select * from public.compliance_coverage()') > 0, true);
+select test.eq('viewer without any scope sees no coverage (F-1)', test.count('select * from public.compliance_coverage()'), 0::bigint);
+select test.eq('viewer can still read the Compliance Master (global reference data)', test.count('select * from public.compliance_master') > 0, true);
+select test.eq('viewer can still read the Location Master (global base data)', test.count('select * from public.location') > 0, true);
 select test.logout();
 select test.login('stranger@gmail.com');
 select test.eq('unprovisioned sees no matrix', test.count('select * from public.compliance_applicability'), 0::bigint);
