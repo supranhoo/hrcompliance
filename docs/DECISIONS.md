@@ -145,4 +145,7 @@ First rollout enables only the three jobs that have runners; the other four stay
 
 ## D-037 Access administration (migration 0033)
 New `role.admin` permission split from `user.admin`; guards are database triggers (last role administrator cannot be removed, self-lockout needs explicit confirmation, role codes and linked emails immutable); changes go through audited reason-mandatory RPCs while RLS stays on every table.
-Rejected: hardcoding "SUPER_ADMIN" checks (contradicts permission-driven access); frontend-only guards (bypassable); SECURITY DEFINER admin RPCs (would bypass RLS). Department scope deliberately not offered until access checks enforce it. See docs/ACCESS_ADMIN.md.
+Rejected: hardcoding "SUPER_ADMIN" checks (contradicts permission-driven access); frontend-only guards (bypassable); SECURITY DEFINER admin RPCs (would bypass RLS). See docs/ACCESS_ADMIN.md.
+
+## D-038 Department scope (owner decision, folded into migration 0033)
+Department narrows access only where the resource has a department (obligation department = master owner department; null = entity/location rules only); scope_all bypasses; global masters stay globally readable; department alone never grants access. Added as overloads so existing 2-dimension callers are unchanged; enforced by RLS, coverage and alert recipient resolution. Rejected: a mandatory department on every record (many obligations are entity/location-wide); frontend-only filtering.

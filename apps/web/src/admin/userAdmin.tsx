@@ -9,10 +9,10 @@ import { supabase } from '../lib/supabase'
 import { AuditTab } from '../pages/quickviews'
 import { useLookup } from './lookups'
 import { useGuardedRpc } from './guardedRpc'
-import { validateInvite, validateScope } from './accessLogic'
+import { describeScope, validateInvite, validateScope } from './accessLogic'
 
-export type UserAdminRow = { id: string; email: string; full_name: string | null; status: 'invited' | 'active' | 'disabled'; scope_all: boolean; last_login_at: string | null; signed_in: boolean; roles: string[]; entity_scopes: number; location_scopes: number; is_role_admin: boolean }
-const SELECT = 'id,email,full_name,status,scope_all,last_login_at,signed_in,roles,entity_scopes,location_scopes,is_role_admin'
+export type UserAdminRow = { id: string; email: string; full_name: string | null; status: 'invited' | 'active' | 'disabled'; scope_all: boolean; last_login_at: string | null; signed_in: boolean; roles: string[]; entity_scopes: number; location_scopes: number; department_scopes: number; is_role_admin: boolean }
+const SELECT = 'id,email,full_name,status,scope_all,last_login_at,signed_in,roles,entity_scopes,location_scopes,department_scopes,is_role_admin'
 const TONE: Record<string, Tone> = { active: 'ok', invited: 'info', disabled: 'neutral' }
 const REASON_HELP = 'Recorded in the audit history'
 
@@ -75,32 +75,52 @@ function RolesPanel({ u, canEdit, close }: { u: UserAdminRow; canEdit: boolean; 
   )
 }
 
+type ScopeSel = { scope_type: 'entity' | 'location' | 'department'; scope_id: string }
 function ScopePanel({ u, canEdit, close }: { u: UserAdminRow; canEdit: boolean; close: () => void }) {
-  const { run, dialog, busy } = useGuardedRpc(['user-scope']); const ents = useLookup({ table: 'entity', value: 'id', label: 'name' }); const locs = useLookup({ table: 'location', value: 'id', label: 'name' })
-  const cur = useQuery({ queryKey: ['user-scope', u.id], enabled: !!supabase, queryFn: async () => { const { data, error } = await supabase!.from('v_user_scope').select('scope_type,scope_id').eq('user_id', u.id); if (error) throw error; return (data ?? []) as Array<{ scope_type: 'entity' | 'location'; scope_id: string }> } })
+  const { run, dialog, busy } = useGuardedRpc(['user-scope']); const ents = useLookup({ table: 'entity', value: 'id', label: 'name' }); const locs = useLookup({ table: 'location', value: 'id', label: 'name' }); const deps = useLookup({ table: 'department', value: 'id', label: 'name' })
+  const cur = useQuery({ queryKey: ['user-scope', u.id], enabled: !!supabase, queryFn: async () => { const { data, error } = await supabase!.from('v_user_scope').select('scope_type,scope_id').eq('user_id', u.id); if (error) throw error; return (data ?? []) as ScopeSel[] } })
   if (cur.isLoading) return <Skeleton rows={3} />; if (cur.error) return <ErrorState message={(cur.error as Error).message} />
-  return <ScopeForm key={u.id} u={u} canEdit={canEdit} close={close} run={run} busy={busy} dialog={dialog} entOpts={ents.data ?? []} locOpts={locs.data ?? []} initialEntities={(cur.data ?? []).filter((s) => s.scope_type === 'entity').map((s) => s.scope_id)} initialLocations={(cur.data ?? []).filter((s) => s.scope_type === 'location').map((s) => s.scope_id)} />
+  const pick = (t: ScopeSel['scope_type']) => (cur.data ?? []).filter((s) => s.scope_type === t).map((s) => s.scope_id)
+  return <ScopeForm key={u.id} u={u} canEdit={canEdit} close={close} run={run} busy={busy} dialog={dialog} entOpts={ents.data ?? []} locOpts={locs.data ?? []} depOpts={deps.data ?? []} initialEntities={pick('entity')} initialLocations={pick('location')} initialDepartments={pick('department')} />
 }
-function ScopeForm({ u, canEdit, close, run, busy, dialog, entOpts, locOpts, initialEntities, initialLocations }: { u: UserAdminRow; canEdit: boolean; close: () => void; run: ReturnType<typeof useGuardedRpc>['run']; busy: boolean; dialog: React.ReactNode; entOpts: Array<{ value: string; label: string }>; locOpts: Array<{ value: string; label: string }>; initialEntities: string[]; initialLocations: string[] }) {
-  const [all, setAll] = useState(u.scope_all); const [entities, setEntities] = useState(initialEntities); const [locations, setLocations] = useState(initialLocations); const [reason, setReason] = useState(''); const [errors, setErrors] = useState<Record<string, string>>({})
-  async function save() { const errs = validateScope({ scopeAll: all, entities, locations, reason }); setErrors(errs); if (Object.keys(errs).length) return; if (await run('user_set_scope', { p_user: u.id, p_scope_all: all, p_entities: all ? [] : entities, p_locations: all ? [] : locations, p_reason: reason.trim() }, `Scope updated for ${u.email}`)) close() }
+function ScopeForm({ u, canEdit, close, run, busy, dialog, entOpts, locOpts, depOpts, initialEntities, initialLocations, initialDepartments }: { u: UserAdminRow; canEdit: boolean; close: () => void; run: ReturnType<typeof useGuardedRpc>['run']; busy: boolean; dialog: React.ReactNode; entOpts: Array<{ value: string; label: string }>; locOpts: Array<{ value: string; label: string }>; depOpts: Array<{ value: string; label: string }>; initialEntities: string[]; initialLocations: string[]; initialDepartments: string[] }) {
+  const [all, setAll] = useState(u.scope_all); const [entities, setEntities] = useState(initialEntities); const [locations, setLocations] = useState(initialLocations); const [departments, setDepartments] = useState(initialDepartments); const [reason, setReason] = useState(''); const [errors, setErrors] = useState<Record<string, string>>({})
+  async function save() { const errs = validateScope({ scopeAll: all, entities, locations, departments, reason }); setErrors(errs); if (Object.keys(errs).length) return; if (await run('user_set_scope', { p_user: u.id, p_scope_all: all, p_entities: all ? [] : entities, p_locations: all ? [] : locations, p_departments: all ? [] : departments, p_reason: reason.trim() }, `Scope updated for ${u.email}`)) close() }
   return (
     <div className="space-y-3">
+      <p className="rounded bg-canvas p-2 text-sm" aria-live="polite"><strong>Current access: </strong>{describeScope({ scopeAll: all, entities: entities.length, locations: locations.length, departments: departments.length })}</p>
       <label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" disabled={!canEdit} checked={all} onChange={(e) => setAll(e.target.checked)} /> All locations (unrestricted)</label>
-      {!all && <><CheckList legend="Legal entities" options={entOpts} value={entities} onChange={setEntities} disabled={!canEdit} /><CheckList legend="Locations" options={locOpts} value={locations} onChange={setLocations} disabled={!canEdit} /></>}
+      {all ? <p className="text-xs text-muted">Broad access: this bypasses entity, location and department limits. Explicit lists are removed when you save.</p> : <>
+        <CheckList legend="Legal entities" options={entOpts} value={entities} onChange={setEntities} disabled={!canEdit} />
+        <CheckList legend="Locations" options={locOpts} value={locations} onChange={setLocations} disabled={!canEdit} />
+        <CheckList legend="Departments" options={depOpts} value={departments} onChange={setDepartments} disabled={!canEdit} /></>}
       {errors.scope && <p role="alert" className="text-xs text-status-crit">{errors.scope}</p>}
-      <p className="text-xs text-muted">Entity access covers all locations of that entity. Department scope is not enforced by access checks yet, so it is not offered here.</p>
-      {canEdit && <><ReasonField value={reason} onChange={setReason} error={errors.reason} /><Button loading={busy} onClick={() => void save()}>Save scope</Button></>}
+      <p className="text-xs text-muted">Entity or location access decides <em>where</em> a person can work. A department narrows that: obligations owned by a department are visible only to people holding that department. Obligations with no owning department follow entity/location only. Departments never grant access on their own.</p>
+      {canEdit && <><ReasonField value={reason} onChange={setReason} error={errors.reason} /><Button loading={busy} onClick={() => void save()}>Replace scope</Button></>}
       {dialog}
     </div>
   )
+}
+
+type ScopeChange = { id: number; at: string; action: string; reason: string | null; type: string; target: string }
+/** Before/after of a user's scope, read from the audit log: each granted or removed entity / location / department with the reason. */
+function ScopeHistory({ userId }: { userId: string }) {
+  const names = Object.fromEntries([...(useLookup({ table: 'entity', value: 'id', label: 'name' }).data ?? []), ...(useLookup({ table: 'location', value: 'id', label: 'name' }).data ?? []), ...(useLookup({ table: 'department', value: 'id', label: 'name' }).data ?? [])].map((o) => [o.value, o.label]))
+  const q = useQuery({ queryKey: ['user-scope-history', userId], enabled: !!supabase, queryFn: async (): Promise<ScopeChange[]> => {
+    const { data, error } = await supabase!.from('audit_log').select('id,at,action,reason,old_data,new_data').eq('table_name', 'user_scope').or(`new_data->>user_id.eq.${userId},old_data->>user_id.eq.${userId}`).order('at', { ascending: false }).limit(100)
+    if (error) throw error
+    return (data ?? []).map((r) => { const d = (r.new_data ?? r.old_data) as { scope_type?: string; scope_id?: string } | null; return { id: r.id as number, at: r.at as string, action: r.action as string, reason: r.reason as string | null, type: d?.scope_type ?? '', target: d?.scope_id ?? '' } })
+  } })
+  if (q.isLoading) return <Skeleton rows={3} />; if (q.error) return <ErrorState message={(q.error as Error).message} />
+  if (!q.data?.length) return <p className="text-sm text-muted">No scope changes recorded.</p>
+  return <ul className="space-y-1 text-sm">{q.data.map((c) => <li key={c.id} className="rounded border border-line p-2"><span className={c.action === 'DELETE' ? 'text-status-crit' : 'text-status-ok'}>{c.action === 'DELETE' ? '− removed' : '+ granted'}</span> {c.type}: {names[c.target] ?? c.target} <span className="text-xs text-muted">{new Date(c.at).toLocaleString()}{c.reason ? ` · ${c.reason}` : ''}</span></li>)}</ul>
 }
 
 const cols: ColumnDef<UserAdminRow, unknown>[] = [
   { accessorKey: 'full_name', header: 'Name', cell: (c) => c.getValue<string | null>() ?? '—' }, { accessorKey: 'email', header: 'Email' },
   { accessorKey: 'status', header: 'Status', cell: (c) => <Badge tone={TONE[c.getValue<string>()] ?? 'neutral'}>{c.getValue<string>()}</Badge> },
   { accessorKey: 'roles', header: 'Roles', enableSorting: false, cell: (c) => (c.getValue<string[]>() ?? []).join(', ') || '—' },
-  { id: 'scope', header: 'Scope', enableSorting: false, cell: (c) => { const r = c.row.original; return r.scope_all ? 'All locations' : `${r.entity_scopes} entities · ${r.location_scopes} locations` } },
+  { id: 'scope', header: 'Scope', enableSorting: false, cell: (c) => { const r = c.row.original; return describeScope({ scopeAll: r.scope_all, entities: r.entity_scopes, locations: r.location_scopes, departments: r.department_scopes }) } },
   { accessorKey: 'last_login_at', header: 'Last sign-in', cell: (c) => { const v = c.getValue<string | null>(); return v ? new Date(v).toLocaleString() : 'Never' } },
 ]
 export function UsersAdminPage() {
@@ -113,6 +133,7 @@ export function UsersAdminPage() {
         { id: 'user', label: 'User', content: <StatusPanel u={r} canEdit={canUsers} close={close} /> },
         { id: 'roles', label: 'Roles', content: <RolesPanel u={r} canEdit={canRoles} close={close} /> },
         { id: 'scope', label: 'Scope', content: <ScopePanel u={r} canEdit={canUsers} close={close} /> },
+        { id: 'scope-history', label: 'Scope history', content: <ScopeHistory userId={r.id} /> },
         { id: 'audit', label: 'History', content: <AuditTab table="app_user" id={r.id} /> }]} />)}
       actions={canUsers ? <Button onClick={() => setInviting(true)}>Invite user</Button> : undefined} />
     <Dialog open={inviting} onClose={() => setInviting(false)} title="Invite user">{inviting && <InviteForm onDone={() => setInviting(false)} />}</Dialog>

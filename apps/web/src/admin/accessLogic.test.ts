@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { diffPermissions, groupByModule, touchesCritical, validateInvite, validateRoleForm, validateScope } from './accessLogic'
+import { describeScope, diffPermissions, groupByModule, touchesCritical, validateInvite, validateRoleForm, validateScope } from './accessLogic'
 import { describeError, isSelfLockout } from './errors'
 
 describe('permission editor logic', () => {
@@ -10,7 +10,11 @@ describe('permission editor logic', () => {
   it('validates role, invite and scope forms', () => {
     expect(validateRoleForm({ code: 'bad', name: '', reason: '' }, true)).toMatchObject({ code: expect.any(String), name: expect.any(String), reason: expect.any(String) }); expect(validateRoleForm({ code: '', name: 'x', reason: 'r' }, false)).toEqual({})
     expect(validateInvite({ email: 'nope', reason: 'r' }).email).toBeTruthy(); expect(validateInvite({ email: 'a@b.co', reason: 'r' })).toEqual({})
-    expect(validateScope({ scopeAll: false, entities: [], locations: [], reason: 'r' }).scope).toBeTruthy(); expect(validateScope({ scopeAll: true, entities: [], locations: [], reason: 'r' })).toEqual({})
+    expect(validateScope({ scopeAll: false, entities: [], locations: [], departments: [], reason: 'r' }).scope).toBeTruthy(); expect(validateScope({ scopeAll: false, entities: [], locations: [], departments: ['d'], reason: 'r' }).scope).toMatch(/only narrows/); expect(validateScope({ scopeAll: true, entities: [], locations: [], departments: [], reason: 'r' })).toEqual({})
+  })
+  it('describes broad versus explicit access', () => {
+    expect(describeScope({ scopeAll: true, entities: 0, locations: 0, departments: 0 })).toMatch(/broad access/); expect(describeScope({ scopeAll: false, entities: 0, locations: 0, departments: 0 })).toMatch(/sees no business data/)
+    expect(describeScope({ scopeAll: false, entities: 1, locations: 2, departments: 0 })).toBe('1 entity + 2 locations; department-owned items are hidden (no department scope)'); expect(describeScope({ scopeAll: false, entities: 1, locations: 0, departments: 2 })).toBe('1 entity, limited to 2 departments for department-owned items')
   })
   it('reports guard errors and detects self-lockout', () => { expect(isSelfLockout({ code: 'AD002' })).toBe(true); expect(isSelfLockout({ code: '42501' })).toBe(false); expect(describeError({ code: 'AD001', message: 'at least one active user must keep role administration' })).toMatch(/at least one active user/) })
 })

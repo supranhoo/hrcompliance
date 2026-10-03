@@ -48,17 +48,26 @@ select test.denied('unknown role', $$select public.user_set_roles((select id fro
 select public.user_set_roles((select id from public.app_user where email='new.person@bfcl.test'), '{VIEWER}', 'drop auditor');
 select test.eq('role removed', (select roles from public.v_user_admin where email='new.person@bfcl.test'), array['VIEWER']);
 
-select test.denied('restricted scope needs at least one entity or location', $$select public.user_set_scope((select id from public.app_user where email='new.person@bfcl.test'), false, '{}', '{}', 'r')$$);
-select test.denied('unknown location', $$select public.user_set_scope((select id from public.app_user where email='new.person@bfcl.test'), false, '{}', array[gen_random_uuid()], 'r')$$);
+select test.denied('restricted scope needs at least one entity or location', $$select public.user_set_scope((select id from public.app_user where email='new.person@bfcl.test'), false, '{}', '{}', '{}', 'r')$$);
+select test.denied('unknown location', $$select public.user_set_scope((select id from public.app_user where email='new.person@bfcl.test'), false, '{}', array[gen_random_uuid()], '{}', 'r')$$);
 do $$ declare ent uuid; loc uuid; begin
   select id into ent from public.entity limit 1; select id into loc from public.location limit 1;
   if ent is null or loc is null then raise exception 'test data missing'; end if;
-  perform public.user_set_scope((select id from public.app_user where email='new.person@bfcl.test'), false, array[ent], array[loc], 'restrict to one entity and location');
+  perform public.user_set_scope((select id from public.app_user where email='new.person@bfcl.test'), false, array[ent], array[loc], '{}', 'restrict to one entity and location');
 end $$;
 select test.eq('scope written', (select entity_scopes || '/' || location_scopes || '/' || scope_all from public.v_user_admin where email='new.person@bfcl.test'), '1/1/false');
 select test.eq('scope view resolves names', (select count(*) from public.v_user_scope where user_id=(select id from public.app_user where email='new.person@bfcl.test') and name is not null), 2::bigint);
-select public.user_set_scope((select id from public.app_user where email='new.person@bfcl.test'), true, '{}', '{}', 'all locations');
+insert into public.department (code, name) values ('DPT1', 'Dept 1') on conflict do nothing;
+select test.denied('a department alone is not a scope', $$select public.user_set_scope((select id from public.app_user where email='new.person@bfcl.test'), false, '{}', '{}', array[(select id from public.department where code='DPT1')], 'r')$$);
+select test.denied('unknown department', $$select public.user_set_scope((select id from public.app_user where email='new.person@bfcl.test'), false, array[(select id from public.entity limit 1)], '{}', array[gen_random_uuid()], 'r')$$);
+select public.user_set_scope((select id from public.app_user where email='new.person@bfcl.test'), false, array[(select id from public.entity limit 1)], '{}', array[(select id from public.department where code='DPT1')], 'entity plus department');
+select test.eq('department scope written', (select department_scopes || '/' || entity_scopes from public.v_user_admin where email='new.person@bfcl.test'), '1/1');
+select test.eq('scope view names the department', (select count(*) from public.v_user_scope where user_id=(select id from public.app_user where email='new.person@bfcl.test') and scope_type='department' and name='Dept 1'), 1::bigint);
+select test.eq('audit shows the added department row with the reason (before/after)', (select count(*) from public.audit_log where table_name='user_scope' and action='INSERT' and reason='entity plus department' and new_data ->> 'scope_type' = 'department'), 1::bigint);
+select public.user_set_scope((select id from public.app_user where email='new.person@bfcl.test'), true, '{}', '{}', '{}', 'all locations');
+select test.eq('All locations clears entity, location and department rows', (select count(*) from public.user_scope where user_id=(select id from public.app_user where email='new.person@bfcl.test')), 0::bigint);
 select test.eq('scope replaced', (select entity_scopes || '/' || location_scopes || '/' || scope_all from public.v_user_admin where email='new.person@bfcl.test'), '0/0/true');
+select test.eq('removal of the department row is audited (old data kept)', (select count(*) from public.audit_log where table_name='user_scope' and action='DELETE' and reason='all locations' and old_data ->> 'scope_type' = 'department'), 1::bigint);
 select test.eq('scope change audited', (select count(*) from public.audit_log where table_name='user_scope' and reason='all locations') >= 1, true);
 
 select public.user_set_status((select id from public.app_user where email='new.person@bfcl.test'), 'disabled', 'left');

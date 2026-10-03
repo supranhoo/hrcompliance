@@ -9,7 +9,7 @@ const h = vi.hoisted(() => ({
 }))
 vi.mock('../hooks/useServerTable', () => ({ useServerTable: (table: string) => ({ query: { page: 0, pageSize: 25, sort: null, search: '' }, setQuery: vi.fn(), rows: h.data[table] ?? [], total: (h.data[table] ?? []).length, isLoading: false, error: null, refetch: vi.fn() }) }))
 vi.mock('../hooks/useLookups', () => ({ useLovOptions: () => ({ data: [] }), useStatusOptions: () => ({ data: [] }) }))
-vi.mock('./lookups', () => ({ useLookup: (l?: { table: string }) => ({ data: l?.table === 'role' ? [{ value: 'HEAD_HR', label: 'Head HR' }, { value: 'VIEWER', label: 'Viewer' }] : l?.table === 'entity' ? [{ value: 'e1', label: 'BFCL Ltd' }] : l?.table === 'location' ? [{ value: 'l1', label: 'Pune' }] : [] }) }))
+vi.mock('./lookups', () => ({ useLookup: (l?: { table: string }) => ({ data: l?.table === 'role' ? [{ value: 'HEAD_HR', label: 'Head HR' }, { value: 'VIEWER', label: 'Viewer' }] : l?.table === 'entity' ? [{ value: 'e1', label: 'BFCL Ltd' }] : l?.table === 'location' ? [{ value: 'l1', label: 'Pune' }] : l?.table === 'department' ? [{ value: 'd1', label: 'Finance' }] : [] }) }))
 vi.mock('../app/AuthProvider', () => ({ useAuth: () => ({ access: { permissions: h.perms, userId: 'u', email: 'a@b', fullName: null, scopeAll: true, roles: [] } }) }))
 vi.mock('../pages/quickviews', () => ({ AuditTab: () => <p>audit history</p> }))
 vi.mock('../lib/supabase', () => {
@@ -23,7 +23,7 @@ import { ToastProvider } from '../app/Toasts'
 const wrap = (ui: React.ReactElement) => render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><ToastProvider><MemoryRouter>{ui}</MemoryRouter></ToastProvider></QueryClientProvider>)
 const perms = [{ code: 'compliance.read', module: 'compliance', description: 'Read compliance' }, { code: 'role.admin', module: 'user', description: 'Administer roles' }, { code: 'user.admin', module: 'user', description: 'Administer users' }]
 const role = { id: 'r1', code: 'HEAD_HR', name: 'Head HR', description: null, is_system: true, permissions: ['compliance.read', 'role.admin'], user_count: 2, grants_role_admin: true }
-const user = { id: 'u1', email: 'a@bfcl.test', full_name: 'Asha', status: 'active', scope_all: false, last_login_at: null, signed_in: true, roles: ['VIEWER'], entity_scopes: 1, location_scopes: 0, is_role_admin: false }
+const user = { id: 'u1', email: 'a@bfcl.test', full_name: 'Asha', status: 'active', scope_all: false, last_login_at: null, signed_in: true, roles: ['VIEWER'], entity_scopes: 1, location_scopes: 0, department_scopes: 0, is_role_admin: false }
 beforeEach(() => { h.rpc.length = 0; h.rpcError = null; h.perms = new Set(['user.admin', 'role.admin', 'user.read']); h.data = { v_role_admin: [role], permission: perms, v_user_admin: [user], v_user_scope: [{ scope_type: 'entity', scope_id: 'e1' }] } })
 
 describe('Roles & permissions', () => {
@@ -64,8 +64,16 @@ describe('Users administration', () => {
   })
   it('scope: restricted needs a choice; saving sends entity and location lists', async () => {
     wrap(<UsersAdminPage />); fireEvent.click(await screen.findByText('Asha')); fireEvent.click(await screen.findByRole('tab', { name: 'Scope' }))
-    fireEvent.click(await screen.findByLabelText('BFCL Ltd')); fireEvent.click(screen.getByLabelText('Pune')); fireEvent.change(screen.getByLabelText(/Reason/), { target: { value: 'plant move' } }); fireEvent.click(screen.getByRole('button', { name: 'Save scope' }))
-    await waitFor(() => expect(h.rpc).toHaveLength(1)); expect(h.rpc[0]).toEqual({ fn: 'user_set_scope', args: { p_user: 'u1', p_scope_all: false, p_entities: [], p_locations: ['l1'], p_reason: 'plant move' } })
+    fireEvent.click(await screen.findByLabelText('BFCL Ltd')); fireEvent.click(screen.getByLabelText('Pune')); fireEvent.click(screen.getByLabelText('Finance')); fireEvent.change(screen.getByLabelText(/Reason/), { target: { value: 'plant move' } }); fireEvent.click(screen.getByRole('button', { name: 'Replace scope' }))
+    await waitFor(() => expect(h.rpc).toHaveLength(1)); expect(h.rpc[0]).toEqual({ fn: 'user_set_scope', args: { p_user: 'u1', p_scope_all: false, p_entities: [], p_locations: ['l1'], p_departments: ['d1'], p_reason: 'plant move' } })
+  })
+  it('a department alone is refused on the frontend; All locations replaces explicit lists', async () => {
+    wrap(<UsersAdminPage />); fireEvent.click(await screen.findByText('Asha')); fireEvent.click(await screen.findByRole('tab', { name: 'Scope' }))
+    fireEvent.click(await screen.findByLabelText('BFCL Ltd')); fireEvent.click(screen.getByLabelText('Finance')); expect(screen.getByText(/Current access/).parentElement).toHaveTextContent('limited to 1 department')
+    fireEvent.change(screen.getByLabelText(/Reason/), { target: { value: 'r' } }); fireEvent.click(screen.getByRole('button', { name: 'Replace scope' }))
+    expect(await screen.findByText(/only narrows an entity or location scope/)).toBeInTheDocument(); expect(h.rpc).toHaveLength(0)
+    fireEvent.click(screen.getByLabelText(/All locations/)); expect(screen.getByText(/bypasses entity, location and department limits/)).toBeInTheDocument(); fireEvent.click(screen.getByRole('button', { name: 'Replace scope' }))
+    return waitFor(() => expect(h.rpc[0].args).toMatchObject({ p_scope_all: true, p_entities: [], p_locations: [], p_departments: [] }))
   })
   it('role editing is unavailable without role.admin; disabling needs a reason', async () => {
     h.perms = new Set(['user.admin', 'user.read']); wrap(<UsersAdminPage />); fireEvent.click(await screen.findByText('Asha'))
