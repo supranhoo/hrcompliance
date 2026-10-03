@@ -30,3 +30,24 @@ Dev → automated validation (`npm run validate`) → internal test → UAT → 
 
 ## Rollback
 Migration headers carry rollback guidance; data-bearing migrations (Phase 5+) must ship a tested down-script before UAT.
+
+## Development environment registry
+| Item | Value / state |
+|---|---|
+| Supabase project | `bfcl-hrc-dev` (development only) |
+| Supabase ↔ GitHub integration | repo `supranhoo/hrcompliance`, directory `.`, deploy-to-production ON, tracked branch `claude/peaceful-wozniak-gyfjaw` (owner-configured; note: a feature branch is the tracked branch — repoint to `main` once the repo has one) |
+| Web hosting | Cloudflare Pages `https://hrcompliance.pages.dev` (owner-configured) |
+| Supabase Auth | Site URL `https://hrcompliance.pages.dev`; Redirect URL `https://hrcompliance.pages.dev/auth/callback`; Google provider enabled; OAuth test user configured (owner-reported) |
+
+## Migration deployment log
+| Date | Event | Evidence |
+|---|---|---|
+| 2026-10-03 | Migrations 1–11 committed and pushed (HEAD `97bfdd3`); integration configured afterwards, so no push event had fired | git only |
+| 2026-10-03 | Documentation-only commit pushed to fire the integration's branch-update deployment | **Applied? Unknown** — verify in Supabase (Database → Migrations, and the GitHub integration's deployment status). Do not treat as applied until the validation sequence below passes |
+
+## Post-deployment validation sequence (SQL editor, in order)
+1. `select version from supabase_migrations.schema_migrations order by 1;` → 11 rows `20261003000001` … `20261003000011`.
+2. Run `supabase/tests/security_audit.sql` → **0 rows**.
+3. `select count(*) from public.role;` → **5** · `select count(*) from public.job_definition;` → **7**.
+4. Run `supabase/seed/dev_bootstrap_admin.sql`.
+5. Sign in at `https://hrcompliance.pages.dev` with the dev admin Google account (checklist T4–T8 in `docs/AUTH.md`).
