@@ -1,0 +1,15 @@
+{
+  "name": "bfcl-hr-compliance",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev": "npm -w apps/web run dev",
+    "build": "npm -w apps/web run build",
+    "typecheck": "npm -w apps/web run typecheck",
+    "lint": "npm -w apps/web run lint",
+    "test": "npm -w apps/web run test",
+    "test:db": "scripts/validation/db-test.sh",
+    "validate": "npm run typecheck && npm run lint && npm run test && npm run build && npm run test:db"
+  }
+}

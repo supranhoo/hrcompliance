@@ -11,3 +11,4 @@ supabase/.branches/
 supabase/.temp/
 # Source workbooks are preserved outside Git (may contain personal data); see docs/MIGRATION_PLAN.md
 data/source/
+*.tsbuildinfo
