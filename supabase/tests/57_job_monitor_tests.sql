@@ -3,7 +3,7 @@
 begin;
 select test.eq('only jobs with a SQL entry point are marked as having a runner', (select string_agg(code, ',' order by code) from public.job_definition where runner is not null), 'alert_generation,compliance_generation,exception_generation');
 select test.eq('every declared runner exists in the database', (select count(*) from public.job_definition d where d.runner is not null and to_regprocedure(d.runner) is null), 0::bigint);
-delete from public.job_run where job_code in ('compliance_generation');
+delete from public.job_run where job_code in ('compliance_generation','housekeeping');
 select app.run_compliance_generation('test');
 select test.login('admin@bfcl.test');
 select test.eq('status view lists every job', (select count(*) from public.v_job_status), (select count(*) from public.job_definition));
