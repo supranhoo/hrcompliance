@@ -125,3 +125,7 @@ The modular engine files 01/04/05/06 and `uat_rule_change.sql` require migration
 
 ## PHASE 6 BASELINE CLOSED — 2026-10-03
 LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported): `live_gate.sql` OVERALL PASS (25/25 migrations, 45 tables, 5 views, 20 permissions, 5 roles, audit 0, anon exposure 0, 24/24 functions) and `live_followup_check.sql` 15/15 PASS. D-001, F-1, F-2 live verified. Full detail: `docs/LIVE_VERIFICATION.md`. The only remaining manual items are the optional visual confirmations listed under "Browser UAT C1–C13".
+
+
+## Master Data Administration + Import — LIVE VERIFIED (2026-10-03)
+LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported): `live_gate.sql` OVERALL PASS (31 migrations, 48 tables, 12 views, 22 permissions, audit 0) and `live_admin_check.sql` 14/14 PASS. Migrations 0026–0031 are hash-locked. Browser-level behaviour of the admin and import screens is covered by CI (44 headless checks, 224 unit/component tests); a human walk-through on the live site remains optional.

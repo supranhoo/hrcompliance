@@ -82,8 +82,15 @@ See "Remaining live-only checks" in `docs/UAT_PHASE6_RUNBOOK.md` (one consolidat
 | Migration lock | 0001–0025 hash-locked; future fixes start at migration 0026 |
 
 
-## PENDING live verification — migrations 0026–0031 (Master Data Administration + Import Framework)
-Code-complete and verified on PostgreSQL 16/17 in CI (SQL suites 52–56, 87 admin/import unit tests, 44 headless-browser checks). **Not yet verified on `bfcl-hrc-dev`.** After the deployment branch deploys them, the owner runs:
-1. `supabase/tests/live_gate.sql` — expects 31 migrations, 48 tables, 12 views, 22 permissions, OVERALL PASS.
-2. `supabase/dev-samples/live_admin_check.sql` — read-only, expects all 14 checks PASS.
-Until both are recorded here, 0026–0031 are **not** hash-locked.
+## LIVE VERIFIED — migrations 0026–0031 (Master Data Administration + Generic Import Framework) — LIVE `bfcl-hrc-dev`, PostgreSQL 17 (owner-reported, 2026-10-03)
+| Check | Live result |
+|---|---|
+| `supabase/tests/live_gate.sql` | **OVERALL = PASS** |
+| migrations applied | 31 |
+| public application tables / views | 48 / 12 |
+| permissions | 22 |
+| security audit violations | 0 |
+| `supabase/dev-samples/live_admin_check.sql` | **OVERALL = PASS** — checks 1–14 all PASS (master identity guard, rule-version/applicability RPCs, read models, coverage view, LOV/status/settings guards, protected values, system statuses, evidence-requirement configuration, alert-rule views, import tables with RLS forced, import functions, generic reference templates, import permissions held by SUPER_ADMIN, `pg_cron` information row) |
+| `pg_cron` | not installed (scheduling OFF) |
+
+Migration lock: `supabase/migrations.lock` now holds the SHA-256 of **all 31** migrations (0001–0025 unchanged, 0026–0031 added, no migration content modified). New schema work starts at migration 0032.

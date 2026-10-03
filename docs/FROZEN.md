@@ -20,5 +20,5 @@ The following are **FROZEN**. Do not modify unless a *reproducible defect* is de
 1. Reproduce (test or live evidence). 2. New migration / commit. 3. All suites + audit pass. 4. Update this file and D-0xx.
 
 ## Migration hash-lock (updated 2026-10-03)
-`supabase/migrations.lock` holds SHA-256 for **migrations 0001–0025** (all applied to `bfcl-hrc-dev` and live-gated; PostgreSQL 17). `check-frozen-migrations.sh` (CI step 1) fails if any is edited or deleted or if a file is inserted inside the range; `test-frozen-lock.sh` proves the check works.
+`supabase/migrations.lock` holds SHA-256 for **migrations 0001–0031** (all applied to `bfcl-hrc-dev` and live-gated; PostgreSQL 17). `check-frozen-migrations.sh` (CI step 1) fails if any is edited or deleted or if a file is inserted inside the range; `test-frozen-lock.sh` proves the check works.
 **A legitimate correction is a NEW migration** (0023 or later): never edit a locked file. Write the fix as `create or replace function …` / `alter …` in a new file with a `-- Rollback:` note, add tests, deploy and live-gate it, then extend the lock with `check-frozen-migrations.sh --freeze <version>` in a follow-up commit after the live gate passes.
