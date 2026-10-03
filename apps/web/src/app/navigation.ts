@@ -11,6 +11,7 @@ export const NAV: NavItem[] = [
   { path: '/admin/compliance-masters', title: 'Compliance Master', perm: 'compliance.read', group: 'Master Data' },
   { path: '/admin/rule-versions', title: 'Rule Versions', perm: 'compliance.read', group: 'Master Data' },
   { path: '/admin/applicability', title: 'Applicability Matrix', perm: 'compliance.read', group: 'Master Data' },
+  { path: '/admin/licence-types', title: 'Licence Types', perm: 'licence.read', group: 'Master Data' },
   { path: '/admin/reference/entity', title: 'Legal Entities', perm: 'master.read', group: 'Master Data' },
   { path: '/admin/reference/location', title: 'Locations', perm: 'master.read', group: 'Master Data' },
   { path: '/admin/reference/law', title: 'Laws & Acts', perm: 'master.read', group: 'Master Data' },

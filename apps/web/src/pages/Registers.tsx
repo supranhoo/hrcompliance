@@ -3,6 +3,7 @@ import { Register, type Derived } from '../components/table/Register'
 import { Badge } from '../components/ui'
 import { dueStateBadge, evidenceBadge, expiryBadge, severityTone, titleCase } from '../lib/badges'
 import { nextDaysRange } from '../lib/urlFilters'
+import { LicenceActions, NewLicenceButton } from '../admin/licences'
 import { ComplianceQuickView, EvidenceQuickView, ExceptionQuickView, LicenceQuickView, type ComplianceRow, type EvidenceReqRow, type ExceptionRow, type LicenceRow } from './quickviews'
 
 const DUE_STATES = [{ value: 'overdue', label: 'Overdue' }, { value: 'due_soon', label: 'Due soon' }, { value: 'upcoming', label: 'Upcoming' }, { value: 'completed', label: 'Completed' }, { value: 'not_applicable', label: 'Not applicable' }]
@@ -81,7 +82,8 @@ export function LicencesPage() {
     select={CONTRACT.licences.select}
     columns={licenceCols} getRowId={(r) => r.id} searchColumns={[...CONTRACT.licences.search]} defaultSort={{ id: 'expiry_date', desc: false }}
     filterDefs={[{ key: 'expiry_category', label: 'Expiry', options: EXPIRY }, { key: 'renewal_status', label: 'Renewal', lov: 'LICENCE_RENEWAL_STATUS' }]}
-    extraKeys={['renewal_window_open']} quickViewTitle={(r) => r.licence_no} renderQuickView={(r) => <LicenceQuickView row={r} />} />
+    extraKeys={['renewal_window_open']} quickViewTitle={(r) => r.licence_no} actions={<NewLicenceButton />}
+    renderQuickView={(r, close) => <><LicenceQuickView row={r} /><LicenceActions id={r.id} close={close} /></>} />
 }
 
 const evidenceCols: ColumnDef<EvidenceReqRow, unknown>[] = [
