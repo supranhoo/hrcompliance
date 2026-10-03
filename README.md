@@ -4,6 +4,8 @@ Configurable compliance and governance platform (compliance, contractor complian
 disciplinary, communications, dashboards). PostgreSQL (Supabase) is the source of truth; Excel/Sheets are import,
 export and reconciliation formats only.
 
+> **Gate in force:** Phase 6 is built and locally verified but **not yet proven on the live project**. Until the owner runs `supabase/tests/live_gate.sql` and the UAT in `docs/UAT_PHASE6_RUNBOOK.md`, no new major module starts and migrations 0014–0022 are not hash-locked. Evidence log: `docs/LIVE_VERIFICATION.md`; defects: `docs/qa/DEFECT_LOG.md`; owner decisions on defaults: `docs/DEFAULTS_DECISIONS.md`; deployment plan: `docs/DEPLOYMENT_WORKFLOW.md`.
+
 ## Status (v0.3.0 — development; nothing deployed, nothing applied to Supabase)
 | Area | State |
 |---|---|
