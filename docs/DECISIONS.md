@@ -101,13 +101,13 @@ Drill-down links are plain URLs with whitelisted keys. Frontend `select` lists, 
 `supabase/dev-samples/` (every code `SAMPLE…`) lets the owner exercise the UI in DEV before real masters exist. It is idempotent, removable, tested in CI, and never auto-applied.
 
 ## D-027 Alerts must never disappear silently; UNROUTABLE is a first-class outcome (owner-approved 2026-10-03; implementation pending the live gate)
-Resolution order: rule recipients → configured business escalation recipients → (development only) Super Admin → UNROUTABLE exception surfaced in System Health and the job log. Production never falls back to Super Admin. Design: `docs/design/PHASE6_FOLLOWUPS.md` §1.
+Resolution order: rule recipients → configured business escalation recipients → (development only) Super Admin → UNROUTABLE exception surfaced in System Health and the job log. Production never falls back to Super Admin. Design: `docs/design/PHASE6_FOLLOWUPS.md` §1. **Final:** durable UNROUTABLE notification + exception shown in System Health and Notification Centre; production escalation recipients are BFCL-owned configuration; add a validation listing active critical alert rules with no valid routing (design §6).
 
 ## D-028 Read scope (owner-decided 2026-10-03; implementation pending)
-Legal/reference masters and the Compliance Master are globally readable to authorised HR users; the Applicability Matrix and all transactional or location-specific data are scope-controlled. Supersedes the "configuration is readable regardless of scope" behaviour recorded in D-020.
+Legal/reference masters and the Compliance Master are globally readable to authorised HR users; the Applicability Matrix and all transactional or location-specific data are scope-controlled. Supersedes the "configuration is readable regardless of scope" behaviour recorded in D-020. **Final (2026-10-03):** the Location Master itself is globally readable (not scoped); sensitive location attributes, if ever added, go in a separate scoped extension table.
 
 ## D-029 Rule changes: pin actioned history, supersede future untouched obligations (owner-decided 2026-10-03; implementation pending)
-Completed/actioned obligations stay on their original rule version; future untouched ones on/after the new effective date are superseded with audit and without duplicates (uniqueness among non-superseded rows). Supersedes the "already-generated future obligations keep the old rule" behaviour in D-021. Design: §3.
+Completed/actioned obligations stay on their original rule version; future untouched ones on/after the new effective date are superseded with audit and without duplicates (uniqueness among non-superseded rows). Supersedes the "already-generated future obligations keep the old rule" behaviour in D-021. Design: §3. **Final:** "untouched" = no human/business action; machine activity never marks it touched; determined via a `human_touched_at` marker backed by user-originated audit events (design §6).
 
 ## D-030 UAT defaults are provisional (owner, 2026-10-03)
 Alert timing, due-soon, licence thresholds, grace, reason-required transitions and horizon are accepted **for UAT only**; they are development defaults, not BFCL policy, and must become editable from the web app (configuration increment).

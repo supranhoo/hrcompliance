@@ -50,3 +50,26 @@ Reminders T-7/T-3/T0/D+1 · escalation D+3/D+7 · due-soon 7 days · licence thr
 2. Migration 0023 (D-001 UNROUTABLE + System Health), 0024 (F-1 scope), 0025 (F-2 supersession) — each with tests, each deployed and live-gated separately.
 3. Notification centre (G-001) alongside 0023.
 4. Master-data/configuration UI, then the generic import framework.
+
+---
+## 6. Owner confirmations (2026-10-03, second message) — these supersede the corresponding text above
+
+### F-1 (final)
+* The **Location Master itself is NOT scoped**: basic location data is globally readable by authenticated HR users authorised for the compliance application (`master.read`). Remove the `location` SELECT-policy change proposed in §2.
+* Location-specific **transactional** data stays scope-controlled (applicability matrix, obligations, licences, evidence, exceptions, alerts).
+* If sensitive location attributes are introduced later, they go in a **separate scoped detail/extension table**, never by restricting the base Location Master.
+* Pick-lists therefore list all locations; scope is applied to the data behind them.
+
+### F-2 (final) — definition of "untouched"
+Eligible for automatic reconciliation only when **no human/business action has occurred**: still in initial system status; no evidence; no manual remark; no manual status/owner/date change; no waiver/reopen/not-applicable decision; no user-originated audit event.
+* Machine activity alone (generated alerts, scheduled jobs, auto-generated or auto-resolved exceptions) **must not** mark an obligation touched.
+* Implementation preference: a reliable **`human_touched_at`** marker (set by a trigger when a *user-originated* change occurs — actor is an authenticated user, not a job/system actor; includes evidence attach, remark, status/owner/due-date edit, waive/reopen/N-A), backed by an audit-driven check (`audit_log` rows with a user actor) so the marker can be verified and rebuilt. Not a collection of independent column checks.
+* Unmarked and past-effective-date → supersede; anything marked → pinned and listed in the reconciliation report.
+* Tests must prove: alert/exception/job activity leaves the obligation eligible; each human action (evidence, remark, owner edit, date edit, status change, waive, reopen, N/A) makes it pinned.
+
+### D-001 (final) — conditions
+* No silent loss; no Super Admin as a permanent production recipient; Super Admin fallback **DEVELOPMENT ONLY**.
+* Missing recipient ⇒ durable **UNROUTABLE notification and exception**, exposed in **System Health and the Notification Centre** (Notification Centre becomes part of this increment, G-001, so the record has a home).
+* Production escalation recipients are **BFCL-owned configuration** (alert rule `UNROUTABLE_ESCALATION`).
+* **Configuration validation (new):** a check (callable function, surfaced in System Health and run as a pre-activation gate for alert-rule publication/production activation) that lists every **active critical alert rule with no valid routing** — i.e. no resolvable recipient role/user and no configured escalation recipients — and blocks or loudly warns before production activation. Environment-aware: in production, the Super Admin fallback does not count as valid routing.
+* Tests: production label ⇒ Super Admin never receives; validation flags a rule with no routing; UNROUTABLE record appears in both System Health and the Notification Centre; idempotent re-run.
