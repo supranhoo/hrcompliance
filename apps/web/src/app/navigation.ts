@@ -8,6 +8,7 @@ export const NAV: NavItem[] = [
   { path: '/licences', title: 'Licences & Registrations', perm: 'licence.read', group: 'Compliance' },
   { path: '/evidence', title: 'Evidence', perm: 'evidence.read', group: 'Compliance' },
   { path: '/notifications', title: 'Notification Centre', group: 'Overview' },
+  { path: '/reports', title: 'Reports', perm: 'compliance.read', group: 'Compliance' },
   { path: '/admin/compliance-masters', title: 'Compliance Master', perm: 'compliance.read', group: 'Master Data' },
   { path: '/admin/rule-versions', title: 'Rule Versions', perm: 'compliance.read', group: 'Master Data' },
   { path: '/admin/applicability', title: 'Applicability Matrix', perm: 'compliance.read', group: 'Master Data' },

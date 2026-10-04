@@ -158,3 +158,6 @@ Owner decision 2026-10-04: no runners are invented for due_status_refresh, licen
 
 ## D-041 Register export is a separate, logged, fail-closed permission (migration 0036)
 Exports leave the system, so they need their own permission (`report.export`), an append-only `export_log` written before the file is produced, and the same RLS-protected reads as the screens (no server-side privileged export). CSV only, formula-injection-safe, 10,000-row cap that is logged. Rejected: a SECURITY DEFINER export function (would bypass scope), client-only logging after download (could be skipped), XLSX/report layouts before BFCL defines reports.
+
+## D-042 Reports are invoker-rights functions over the scope-controlled views (migration 0037)
+Performance and pipeline reports run as the caller so they cannot show more than the registers; dimensions are a fixed whitelist; percentages reuse the dashboard definitions and totals are recomputed from counts. No targets, RAG thresholds or layouts are invented. Rejected: a SECURITY DEFINER reporting layer (would bypass scope), materialised report tables (stale, scope-unsafe), free-form SQL reports (arbitrary executable SQL is out of bounds).

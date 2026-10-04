@@ -14,6 +14,7 @@ import { CalendarPage } from './pages/CalendarPage'
 import { CompliancePage, EvidencePage, ExceptionsPage, LicencesPage } from './pages/Registers'
 import { AuthCallbackPage } from './pages/AuthCallbackPage'
 import { SystemHealthPage } from './pages/SystemHealthPage'
+import { ReportsPage } from './pages/ReportsPage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { ImportsPage, NewImportPage, ImportBatchPage } from './admin/import'
 import { ComplianceMasterPage, ReferenceMasterPage, RuleVersionsPage, ApplicabilityPage, CoveragePage, LicenceTypesPage, LovPage, StatusesPage, SettingsPage, AlertRulesPage, ExceptionConfigPage, JobMonitorPage, UsersAdminPage, RolesPage, ExportHistoryPage } from './admin/pages'
@@ -36,6 +37,7 @@ createRoot(document.getElementById('root')!).render(
                     <Route index element={<DashboardPage />} />
                     <Route path="unauthorized" element={<UnauthorizedPage />} />
                     <Route path="notifications" element={<NotificationsPage />} />
+                    <Route element={<RequirePermission perm="compliance.read" />}><Route path="reports" element={<ReportsPage />} /></Route>
                     <Route element={<RequirePermission perm="compliance.read" />}><Route path="compliance" element={<CompliancePage />} /><Route path="calendar" element={<CalendarPage />} /></Route>
                     <Route element={<RequirePermission perm="exception.read" />}><Route path="exceptions" element={<ExceptionsPage />} /></Route>
                     <Route element={<RequirePermission perm="licence.read" />}><Route path="licences" element={<LicencesPage />} /><Route path="admin/licence-types" element={<LicenceTypesPage />} /></Route>

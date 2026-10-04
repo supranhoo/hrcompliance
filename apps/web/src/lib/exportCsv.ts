@@ -44,3 +44,11 @@ export function downloadCsv(name: string, csv: string): void {
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); const a = document.createElement('a')
   a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
+
+/** Logs the export first, then downloads. Returns an error message (and downloads nothing) if the log row could not be written. */
+export async function logAndDownload(client: SupabaseClient, register: string, filters: Record<string, unknown>, rows: Array<Record<string, unknown>>, cols: ExportColumn[], limitReached = false): Promise<string | null> {
+  const { error } = await client.rpc('export_record', { p_register: register, p_filters: filters, p_row_count: rows.length, p_limit_reached: limitReached })
+  if (error) return error.message
+  downloadCsv(exportFileName(register), buildCsv(rows, cols))
+  return null
+}
