@@ -13,11 +13,10 @@ import { DashboardPage } from './pages/DashboardPage'
 import { CalendarPage } from './pages/CalendarPage'
 import { CompliancePage, EvidencePage, ExceptionsPage, LicencesPage } from './pages/Registers'
 import { AuthCallbackPage } from './pages/AuthCallbackPage'
-import { UsersPage } from './pages/UsersPage'
 import { SystemHealthPage } from './pages/SystemHealthPage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { ImportsPage, NewImportPage, ImportBatchPage } from './admin/import'
-import { ComplianceMasterPage, ReferenceMasterPage, RuleVersionsPage, ApplicabilityPage, CoveragePage, LicenceTypesPage, LovPage, StatusesPage, SettingsPage, AlertRulesPage, ExceptionConfigPage, JobMonitorPage } from './admin/pages'
+import { ComplianceMasterPage, ReferenceMasterPage, RuleVersionsPage, ApplicabilityPage, CoveragePage, LicenceTypesPage, LovPage, StatusesPage, SettingsPage, AlertRulesPage, ExceptionConfigPage, JobMonitorPage, UsersAdminPage, RolesPage } from './admin/pages'
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30_000 } } })
 
@@ -45,7 +44,8 @@ createRoot(document.getElementById('root')!).render(
                     <Route element={<RequirePermission perm="master.read" />}><Route path="admin/reference/:kind" element={<ReferenceMasterPage />} /></Route>
                     <Route element={<RequirePermission perm="config.read" />}><Route path="admin/lov" element={<LovPage />} /><Route path="admin/alert-rules" element={<AlertRulesPage />} /><Route path="admin/exception-config" element={<ExceptionConfigPage />} /><Route path="admin/statuses" element={<StatusesPage />} /><Route path="admin/settings" element={<SettingsPage />} /></Route>
                     <Route element={<RequirePermission perm="import.read" />}><Route path="admin/imports" element={<ImportsPage />} /><Route path="admin/imports/new" element={<NewImportPage />} /><Route path="admin/imports/:id" element={<ImportBatchPage />} /></Route>
-                    <Route element={<RequirePermission perm="user.read" />}><Route path="admin/users" element={<UsersPage />} /></Route>
+                    <Route element={<RequirePermission perm="user.read" />}><Route path="admin/users" element={<UsersAdminPage />} /></Route>
+                    <Route element={<RequirePermission perm="user.read" />}><Route path="admin/roles" element={<RolesPage />} /></Route>
                     <Route element={<RequirePermission perm="health.read" />}><Route path="admin/system-health" element={<SystemHealthPage />} /></Route>
                     <Route element={<RequirePermission perm="job.read" />}><Route path="admin/jobs" element={<JobMonitorPage />} /></Route>
                     <Route path="*" element={<NotFoundPage />} />

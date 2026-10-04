@@ -11,9 +11,13 @@ export function describeError(e: unknown): string {
     case '23514': return msg || 'A value does not satisfy a data rule.'
     case '42501': return /RLS|row-level|row level/i.test(msg) ? 'You do not have permission for this action (or the record is outside your scope).' : msg || 'You do not have permission for this action.'
     case 'PGRST116': return 'The record was not found or is outside your scope.'
+    case 'AD001': case 'AD002': return msg
     case '22023': return msg || 'A value is not allowed.'
     default: return msg || 'Something went wrong. Please try again.'
   }
 }
 /** Optimistic locking: update ... where row_version = n returned nothing. */
 export const CONFLICT_MESSAGE = 'This record was changed by someone else since you opened it. Close and reopen it to see the latest version.'
+
+/** AD002 = the change would remove the caller's own admin access; the user must confirm explicitly and the call is repeated with the flag. */
+export const isSelfLockout = (e: unknown) => (e as DbErrorLike | null)?.code === 'AD002'
