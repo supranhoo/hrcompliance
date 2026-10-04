@@ -138,3 +138,5 @@ LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported): `live_gate.sql` OVERALL PAS
 5. Sign in as a user with `job.read` but not `job.manage` (e.g. a role granted only `job.read`): the screen lists jobs and runs but shows no Disable/Enable controls; a direct call to `job_set_enabled` is refused.
 6. Sign in as a user without `job.read` (e.g. VIEWER): no Job Monitor menu entry; the route shows no access.
 Do not enable `pg_cron`. Report each step as PASS/FAIL.
+
+LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported 2026-10-04): migration 0032 (Job Monitor) verified — `live_gate.sql` OVERALL PASS, `live_job_monitor_check.sql` OVERALL PASS, Job Monitor UI checks passed (reason mandatory, audit written, `job.read` cannot modify). Migration 0032 is hash-locked.

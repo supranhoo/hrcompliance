@@ -94,3 +94,15 @@ See "Remaining live-only checks" in `docs/UAT_PHASE6_RUNBOOK.md` (one consolidat
 | `pg_cron` | not installed (scheduling OFF) |
 
 Migration lock: `supabase/migrations.lock` now holds the SHA-256 of **all 31** migrations (0001–0025 unchanged, 0026–0031 added, no migration content modified). New schema work starts at migration 0032.
+
+## LIVE VERIFIED — migration 0032 (Job Monitor) — LIVE `bfcl-hrc-dev`, PostgreSQL 17 (owner-reported, 2026-10-04)
+| Check | Live result |
+|---|---|
+| `supabase/tests/live_gate.sql` | **OVERALL = PASS** (32 migrations, 48 tables, 14 views, 22 permissions) |
+| `supabase/dev-samples/live_job_monitor_check.sql` | **OVERALL = PASS** |
+| Job Monitor screen (live UI) | page loads |
+| Enable / disable | reason is required; audit row written |
+| `job.read` without `job.manage` | cannot modify jobs |
+| `pg_cron` | not installed; nothing scheduled |
+
+Migration lock: `supabase/migrations.lock` now holds the SHA-256 of **all 32** migrations (0001–0031 unchanged, 0032 added, no migration content modified). Scheduler schedules are approved (D-036) but NOT enabled; rollout gates are in docs/CRON_PROPOSAL.md.
