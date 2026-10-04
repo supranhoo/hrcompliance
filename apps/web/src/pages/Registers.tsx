@@ -30,8 +30,9 @@ const complianceCols: ColumnDef<ComplianceRow, unknown>[] = [
   { accessorKey: 'risk_level', header: 'Risk', cell: (c) => <Badge tone={severityTone(c.getValue<string>())}>{titleCase(c.getValue<string>())}</Badge> },
 ]
 export const complianceDerive = (a: Record<string, string>): Derived => {
-  const { due_within, q, ...rest } = a; void q
+  const { due_within, q, status, ...rest } = a; void q
   const filters: Derived['filters'] = { ...rest }
+  if (status === 'active') filters.status = ['open', 'in_progress']; else if (status) filters.status = status     // 'active' = open or in progress (dashboard drill-down)
   if (due_within && /^\d{1,3}$/.test(due_within)) { filters.status = ['open', 'in_progress']; return { filters, ranges: { due_date: nextDaysRange(Number(due_within)) } } }
   return { filters }
 }
@@ -40,7 +41,7 @@ export function CompliancePage() {
     select={CONTRACT.compliance.select}
     columns={complianceCols} getRowId={(r) => r.id} searchColumns={[...CONTRACT.compliance.search]} defaultSort={{ id: 'due_date', desc: false }}
     filterDefs={[{ key: 'due_state', label: 'State', options: DUE_STATES }, { key: 'status', label: 'Status', statusModule: 'compliance' }, { key: 'risk_level', label: 'Risk', lov: 'RISK' }]}
-    extraKeys={['location_code', 'due_within']} derive={complianceDerive} quickViewTitle={(r) => `${r.compliance_code} · ${r.location_code}`}
+    extraKeys={['location_code', 'location_id', 'entity_id', 'owner_department_id', 'due_within']} derive={complianceDerive} quickViewTitle={(r) => `${r.compliance_code} · ${r.location_code}`}
     renderQuickView={(r) => <ComplianceQuickView row={r} />} searchPlaceholder="Search number, code or name" />
 }
 
@@ -65,7 +66,7 @@ export function ExceptionsPage() {
     select={CONTRACT.exceptions.select}
     columns={exceptionCols} getRowId={(r) => r.id} searchColumns={[...CONTRACT.exceptions.search]} defaultSort={{ id: 'detected_at', desc: true }}
     filterDefs={[{ key: 'category', label: 'Category', lov: 'EXCEPTION_CATEGORY' }, { key: 'severity', label: 'Severity', lov: 'SEVERITY' }, { key: 'status', label: 'Status', statusModule: 'exception' }, { key: 'age_bucket', label: 'Age', options: AGE_BUCKETS }]}
-    extraKeys={['target_breached']} derive={exceptionDerive} quickViewTitle={(r) => r.exception_no} renderQuickView={(r) => <ExceptionQuickView row={r} />} />
+    extraKeys={['target_breached', 'location_id', 'entity_id', 'department_id']} derive={exceptionDerive} quickViewTitle={(r) => r.exception_no} renderQuickView={(r) => <ExceptionQuickView row={r} />} />
 }
 
 const licenceCols: ColumnDef<LicenceRow, unknown>[] = [
@@ -82,7 +83,7 @@ export function LicencesPage() {
     select={CONTRACT.licences.select}
     columns={licenceCols} getRowId={(r) => r.id} searchColumns={[...CONTRACT.licences.search]} defaultSort={{ id: 'expiry_date', desc: false }}
     filterDefs={[{ key: 'expiry_category', label: 'Expiry', options: EXPIRY }, { key: 'renewal_status', label: 'Renewal', lov: 'LICENCE_RENEWAL_STATUS' }]}
-    extraKeys={['renewal_window_open']} quickViewTitle={(r) => r.licence_no} actions={<NewLicenceButton />}
+    extraKeys={['renewal_window_open', 'location_id', 'entity_id']} quickViewTitle={(r) => r.licence_no} actions={<NewLicenceButton />}
     renderQuickView={(r, close) => <><LicenceQuickView row={r} /><LicenceActions id={r.id} close={close} /></>} />
 }
 

@@ -30,6 +30,14 @@ await ctx.route(`${SB}/**`, async (route) => {
   if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' } })
   const p = u.pathname
   if (p.endsWith('/rpc/my_access')) return route.fulfill(json(access))
+  if (p.endsWith('/rpc/management_dashboard')) return route.fulfill(json({ generated_at: new Date().toISOString(), period: { from: '2025-10-04', to: '2026-10-04' }, filters: { entity_id: null, location_id: null, department_id: null }, top_risk_level: 'critical', top_severity: 'critical',
+    kpis: { total_applicable: 120, due_this_month: 14, overdue: 6, critical_open: 9, critical_overdue: 2, due_to_date: 100, completed_to_date: 88, on_time_to_date: 80, compliance_pct: 88, on_time_pct: 80, open_exceptions: 11, critical_exceptions: 3, licences_expiring: 5, licences_expired: 1 },
+    licences: { expiring: 5, expired: 1, horizon_days: 90, department_filter_applies: false },
+    trend: [{ month: '2026-08', due: 10, completed_on_time: 7, completed_late: 1, overdue_open: 2, upcoming_open: 0, due_to_date: 10, compliance_pct: 80 }, { month: '2026-09', due: 12, completed_on_time: 9, completed_late: 1, overdue_open: 1, upcoming_open: 1, due_to_date: 11, compliance_pct: 90.9 }],
+    risk: [{ level: 'low', label: 'Low', sort_order: 10, open: 3, overdue: 0 }, { level: 'critical', label: 'Critical', sort_order: 40, open: 9, overdue: 2 }],
+    by_location: [{ code: 'PUN', name: 'Pune', total: 40, open: 8, overdue: 4, due_to_date: 35, completed_to_date: 30, compliance_pct: 85.7 }], by_department: [{ id: null, name: '(no responsible department)', total: 10, open: 1, overdue: 0, due_to_date: 9, completed_to_date: 9, compliance_pct: 100 }],
+    upcoming: [{ instance_no: 'CMP-1', compliance_code: 'PF', compliance_name: 'PF return', location_code: 'PUN', due_date: '2026-10-10', risk_level: 'high', due_state: 'due_soon' }],
+    critical_exceptions: [{ id: 'x1', exception_no: 'EXC-9', category: 'overdue', severity: 'critical', description: 'Filing not made', age_days: 12, target_breached: true, location_code: 'PUN' }], exception_ageing: { '0-7': 2, '31-90': 1 }, definitions: {} }))
   if (p.endsWith('/rpc/compliance_dashboard')) return route.fulfill(json(fx('dashboard.json')))
   if (p.endsWith('/rpc/compliance_calendar')) return route.fulfill(json(fx('calendar.json').map((r, i) => ({ ...r, due_date: iso(new Date(today.getFullYear(), today.getMonth(), today.getDate() + i)) }))))
   if (p.endsWith('/lov_value')) return route.fulfill(json([{ code: 'high', label: 'High' }, { code: 'low', label: 'Low' }]))
@@ -56,12 +64,22 @@ const page = await ctx.newPage()
 const errors = []; page.on('pageerror', (e) => errors.push(e.message)); page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|net::ERR/.test(m.text())) errors.push(m.text()) })
 const wait = (ms = 700) => page.waitForTimeout(ms)
 
-// 1. dashboard
-await page.goto(BASE + '/'); await page.getByRole('heading', { name: 'Executive Dashboard' }).waitFor()
-const d = fx('dashboard.json')
-check('dashboard renders server numbers', (await page.getByRole('button', { name: /^Overdue/ }).innerText()).includes(String(d.obligations.overdue)))
-check('dashboard shows the compliance % definition', await page.getByText(/Completed obligations as a share/).isVisible())
+// 1. dashboard: management view first (filters + KPIs from management_dashboard), original detailed view on its own tab
+await page.goto(BASE + '/'); await page.getByRole('heading', { name: 'Executive Dashboard' }).waitFor(); await page.getByText('Total applicable').first().waitFor()
+const kpiText = async (label) => (await page.getByRole('button', { name: new RegExp('^' + label) }).first().innerText())
+check('management dashboard shows the six KPIs from the server', (await kpiText('Total applicable')).includes('120') && (await kpiText('Due this month')).includes('14') && (await kpiText('Overdue')).includes('6') && (await kpiText('Critical')).includes('9') && (await kpiText('Open exceptions')).includes('11') && (await kpiText('Licences expiring')).includes('5'))
+check('management dashboard has entity / location / department / period filters', (await page.getByLabel('Entity').count()) === 1 && (await page.getByLabel('Location').count()) === 1 && (await page.getByLabel('Department').count()) === 1 && (await page.getByLabel('Period').count()) === 1)
+check('management dashboard shows trend, risk distribution, performance, upcoming and critical exceptions', (await page.getByRole('img', { name: /Obligations by due month/ }).count()) === 1 && await page.getByText('Risk distribution').isVisible() && await page.getByText('By responsible department').isVisible() && await page.getByText('Critical exceptions').first().isVisible() && await page.getByText('PF return').isVisible())
+check('management dashboard queried management_dashboard with the default 12-month period', requests.some((r) => r.includes('rpc/management_dashboard')))
 await page.screenshot({ path: join(SHOTS, '1-dashboard.png'), fullPage: true })
+await page.getByLabel('Department').selectOption({ index: 0 }).catch(() => {})
+await page.setViewportSize({ width: 390, height: 800 }); await wait(300)
+check('management dashboard has no horizontal page scroll on a phone', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))
+await page.screenshot({ path: join(SHOTS, '1-dashboard-mobile.png'), fullPage: true }); await page.setViewportSize({ width: 1280, height: 900 })
+await page.getByRole('tab', { name: 'Detailed view' }).click(); await page.getByText(/Completed obligations as a share/).waitFor()
+const d = fx('dashboard.json')
+check('detailed view still renders server numbers', (await page.getByRole('button', { name: /^Overdue/ }).innerText()).includes(String(d.obligations.overdue)))
+check('detailed view shows the compliance % definition', await page.getByText(/Completed obligations as a share/).isVisible())
 // 2. drill-down: overdue tile -> filtered register, filter in URL, server query carries the filter
 await page.getByRole('button', { name: /^Overdue/ }).click(); await page.waitForURL('**/compliance?due_state=overdue'); await wait()
 if (process.env.DEBUG_DUMP) { console.log('MAIN:', (await page.locator('main').innerText()).slice(0, 600)); console.log('REQ:', requests.slice(-8).join('\n')); console.log('ERR:', JSON.stringify(errors)) }

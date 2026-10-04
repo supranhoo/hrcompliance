@@ -16,3 +16,12 @@ Every register has an **Export** button when the user holds `report.export` (gra
 - **Licence expiry pipeline** — `report_licence_pipeline(months)`: active licences with an expiry date by month of expiry and licence type, with "already expired" separate (6–60 month horizon).
 Both can be exported with the same permission and logging as registers (`report.export`).
 No report layouts, targets or thresholds are defined here: those need BFCL's agreed report definitions.
+
+## Management dashboard (migration 0038)
+The Executive Dashboard opens on the **Management view**; the original dashboard is kept unchanged on the **Detailed view** tab.
+- **Filters** (kept in the URL, so a view can be shared): entity, location, department (the master's responsible department, D-038) and a period (last 3/6/12 months, year to date = calendar year, or custom dates). No financial-year rule is assumed.
+- **Tiles:** Total applicable (due in the period), Due this month, Overdue (all periods), Critical (open at the highest level of the RISK list, by sort order — not a hardcoded name), Open exceptions (with the count at the highest SEVERITY), Licences expiring (within the longest `licence.expiry_thresholds` value). Compliance % and on-time % are shown as text, never as a coloured status: **no targets or RAG thresholds are defined** (the earlier green/amber/red on the detailed view's compliance tile was removed for the same reason).
+- **Panels:** compliance trend by due month (stacked: on time / late / overdue / not yet due, with an accessible table), risk distribution, location and department performance, upcoming 30 days grouped by date, critical exceptions (oldest first) and exception ageing.
+- **Colour:** red/amber only for overdue, late and critical exceptions; everything else is neutral/primary.
+- **Drill-down:** every tile and row links to the existing registers/reports and carries entity / location / department where the register supports it (licences have no department; the dashboard says so).
+- **Security:** `management_dashboard()` runs as the caller over the scope-controlled views, so role permission AND entity/location/department scope apply exactly as on the registers.

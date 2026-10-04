@@ -5,6 +5,8 @@ import { useDashboard } from '../hooks/useDashboard'
 import { drill, fmtPct, type Dashboard } from '../lib/dashboard'
 import { dueStateBadge, expiryBadge, severityTone, titleCase } from '../lib/badges'
 import { UnauthorizedPage } from './Pages'
+import { ManagementDashboard } from './ManagementDashboard'
+import { Tabs } from '../components/ui'
 
 /** Single-hue proportional bars (no rainbow charts); each row drills down. Text carries the meaning, bars only the proportion. */
 function BarList({ rows, href }: { rows: Array<{ key: string; label: string; value: number; tone?: Tone }>; href: (key: string) => string }) {
@@ -37,7 +39,7 @@ export function DashboardView({ d, nav }: { d: Dashboard; nav?: (to: string) => 
     <div className="space-y-4">
       {!d.has_data && <EmptyState title="No compliance data in your scope yet" description="Figures appear here once obligations are generated for locations you can see. Nothing is estimated or pre-filled." />}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <KpiCard label="Compliance" value={fmtPct(o.compliance_pct)} tone={o.compliance_pct === null ? 'neutral' : o.compliance_pct >= 95 ? 'ok' : o.compliance_pct >= 80 ? 'warn' : 'crit'} hint={o.due_so_far ? `${o.completed} of ${o.due_so_far} due so far` : 'Nothing due yet'} onClick={go(drill.completed)} />
+        <KpiCard label="Compliance" value={fmtPct(o.compliance_pct)} hint={o.due_so_far ? `${o.completed} of ${o.due_so_far} due so far` : 'Nothing due yet'} onClick={go(drill.completed)} />
         <KpiCard label="On time" value={fmtPct(o.on_time_pct)} hint={`${o.completed_late} completed late`} />
         <KpiCard label="Overdue" value={o.overdue} tone={o.overdue > 0 ? 'crit' : 'ok'} hint="Open past due date" onClick={go(drill.overdue)} />
         <KpiCard label="Due soon" value={o.due_soon} tone={o.due_soon > 0 ? 'warn' : 'neutral'} onClick={go(drill.dueSoon)} />
@@ -86,15 +88,23 @@ export function DashboardView({ d, nav }: { d: Dashboard; nav?: (to: string) => 
   )
 }
 
+/** Management view (filterable, management_dashboard) first; the original detailed view (compliance_dashboard) is kept unchanged as a second tab. */
 export function DashboardPage() {
   const q = useDashboard()
   const navigate = useNavigate()
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between"><h1 className="text-xl font-semibold text-navy">Executive Dashboard</h1><Button variant="secondary" onClick={() => void q.refetch()} loading={q.isFetching}>Refresh</Button></div>
-      {q.isLoading ? <div className="space-y-3"><Skeleton rows={3} className="h-16" /></div>
-        : q.error ? ((q.error as { code?: string }).code === '42501' ? <UnauthorizedPage /> : <ErrorState message={(q.error as Error).message} onRetry={() => void q.refetch()} />)
-        : <DashboardView d={q.data!} nav={navigate} />}
+      <h1 className="text-xl font-semibold text-navy">Executive Dashboard</h1>
+      <Tabs tabs={[
+        { id: 'management', label: 'Management view', content: <ManagementDashboard /> },
+        { id: 'detail', label: 'Detailed view', content: (
+          <div className="space-y-4">
+            <div className="flex justify-end"><Button variant="secondary" onClick={() => void q.refetch()} loading={q.isFetching}>Refresh</Button></div>
+            {q.isLoading ? <div className="space-y-3"><Skeleton rows={3} className="h-16" /></div>
+              : q.error ? ((q.error as { code?: string }).code === '42501' ? <UnauthorizedPage /> : <ErrorState message={(q.error as Error).message} onRetry={() => void q.refetch()} />)
+              : <DashboardView d={q.data!} nav={navigate} />}
+          </div>) },
+      ]} />
     </section>
   )
 }

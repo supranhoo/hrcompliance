@@ -161,3 +161,6 @@ Exports leave the system, so they need their own permission (`report.export`), a
 
 ## D-042 Reports are invoker-rights functions over the scope-controlled views (migration 0037)
 Performance and pipeline reports run as the caller so they cannot show more than the registers; dimensions are a fixed whitelist; percentages reuse the dashboard definitions and totals are recomputed from counts. No targets, RAG thresholds or layouts are invented. Rejected: a SECURITY DEFINER reporting layer (would bypass scope), materialised report tables (stale, scope-unsafe), free-form SQL reports (arbitrary executable SQL is out of bounds).
+
+## D-043 Management dashboard reuses the scope-controlled views; no targets, no RAG (migration 0038)
+One invoker-rights function with entity/location/department/period filters; "critical" is the top-ranked value of the RISK/SEVERITY lists; licence horizon comes from the existing expiry-threshold setting; percentages are text, not status colours. The original compliance_dashboard() is unchanged. Rejected: invented percentage targets or traffic-light thresholds (not agreed by BFCL), client-side aggregation (bypasses nothing but is slow and duplicates definitions), a SECURITY DEFINER dashboard layer (would bypass scope).

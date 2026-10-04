@@ -175,3 +175,12 @@ LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported 2026-10-04): migrations 0035 
 Report PASS/FAIL per step. Do not enable `pg_cron`.
 
 LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported 2026-10-04): migration 0037 verified — `live_gate.sql` and `live_reports_check.sql` OVERALL PASS; performance report reconciled to the Compliance Register, grouped totals to the overall total, licence pipeline to Licences & Registrations; both exports in Export History. Migration 0037 is hash-locked.
+
+## Management dashboard live verification (migration 0038, after deployment)
+1. SQL Editor: run `supabase/tests/live_gate.sql` (expect 38 migrations, 49 tables, 18 views, 24 permissions), then `supabase/dev-samples/live_management_dashboard_check.sql` (expect OVERALL PASS).
+2. As SUPER_ADMIN open the Executive Dashboard (Management view). Tiles: Overdue equals the Compliance Register filtered by State = Overdue; Open exceptions equals Exceptions filtered Status = Open; Total applicable equals the Compliance Reports total for the same period.
+3. Apply Entity, Location, Department and Period filters; the URL changes, a copy of the URL reproduces the view, and each tile still drills to the register with the same filters.
+4. Detailed view tab shows the original dashboard. Compliance % no longer has a coloured status.
+5. As a user limited to one entity/location (and a department): figures contain only that scope and match the registers for that user.
+6. Check on a phone-width window: no horizontal page scrolling; the trend chart has a text table for screen readers.
+Report PASS/FAIL per step. Do not enable `pg_cron`.
