@@ -157,3 +157,20 @@ Migration lock: `supabase/migrations.lock` now holds the SHA-256 of **all 36** m
 | `pg_cron` | not installed; nothing scheduled |
 
 Migration lock: `supabase/migrations.lock` now holds the SHA-256 of **all 37** migrations (0001–0036 unchanged, 0037 added, no migration content modified). New schema work starts at migration 0038.
+
+## LIVE VERIFIED — migration 0038 (Management Dashboard) — LIVE `bfcl-hrc-dev`, PostgreSQL 17 (owner-reported, 2026-10-04)
+| Check | Live result |
+|---|---|
+| `supabase/tests/live_gate.sql` | **OVERALL = PASS** (38 migrations, 49 tables, 18 views, 24 permissions) |
+| `supabase/dev-samples/live_management_dashboard_check.sql` | **OVERALL = PASS** |
+| Total Applicable | reconciled with the Compliance Register |
+| Overdue | reconciled with the Compliance Register |
+| Open Exceptions | reconciled with the Exception Register |
+| Due This Month, Licences Expiring | spot-checked |
+| Entity / location / department / period filters | verified |
+| URL filter persistence | verified after reload |
+| Tile and row drill-downs | verified |
+| Detailed view | remains intact |
+| `pg_cron` | not installed; nothing scheduled |
+
+Migration lock: `supabase/migrations.lock` now holds the SHA-256 of **all 38** migrations (0001–0037 unchanged, 0038 added, no migration content modified). New schema work starts at migration 0039.

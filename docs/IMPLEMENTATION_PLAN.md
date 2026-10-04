@@ -10,7 +10,7 @@
 | 5 Masters | organisation / reference / compliance masters | **done and live-verified** (Compliance Master, rule versions, applicability, licences, reference masters, generic import 0031); **employee & contractor masters BLOCKED** on the source audit |
 | 6 Compliance core | master, applicability, generator, calendar, evidence, exceptions, alerts, dashboard, notifications | **done and live-verified** (0014–0025) |
 | Platform | users / roles / permissions / scope (incl. department scope), Job Monitor | **done and live-verified** (0032, 0033); 0035 (jobs without a runner are disabled) live-verified; register export (0036) live-verified |
-| 7 Reporting & analytics | register export, compliance performance report, licence expiry pipeline, management dashboard | export (0036) and reports (0037) **done and live-verified**; management dashboard (0038) built, awaiting live verification; report layouts / XLSX / scheduled reports wait for agreed BFCL report definitions |
+| 7 Reporting & analytics | register export, compliance performance report, licence expiry pipeline, management dashboard | export (0036), reports (0037) and management dashboard / analytics (0038) **done and live-verified**; management dashboard / management analytics (0038) **done and live-verified**; report layouts / XLSX / scheduled reports wait for agreed BFCL report definitions |
 | 8 Contractor compliance | contractor compliance | **BLOCKED**: needs the contractor master from the source audit |
 | 9 Cases | case management | **BLOCKED**: business rules not agreed; depends on masters audited against source data |
 | 10 Communications | templates, follow-up, email delivery | **BLOCKED**: behaviour not agreed; email integration not configured (needs credentials) |
@@ -18,12 +18,12 @@
 | 12 Operations | scheduler rollout, remaining job runners | schedules approved but **not enabled**; runners for 4 jobs not agreed (disabled definitions, 0035) |
 | 13 UAT / release | release readiness | not started |
 
-Migrations 0001–0037 are hash-locked (`docs/FROZEN.md`); evidence is in `docs/LIVE_VERIFICATION.md`. `pg_cron` is OFF; schedules are approved but not enabled (`docs/CRON_PROPOSAL.md`, D-036/D-040). Open follow-ups: `docs/FOLLOWUPS.md`.
+Migrations 0001–0038 are hash-locked (`docs/FROZEN.md`); evidence is in `docs/LIVE_VERIFICATION.md`. `pg_cron` is OFF; schedules are approved but not enabled (`docs/CRON_PROPOSAL.md`, D-036/D-040). Open follow-ups: `docs/FOLLOWUPS.md`.
 
 ## Next increments (in order)
 1. (done) migrations 0035 and 0036 live-verified and locked.
 2. **Source workbooks** → profile → audit → source-to-target map (template `docs/migration/SOURCE_TO_TARGET_MAP.md`). Still blocked: no files received.
-3. Non-blocked product work: register export (0036) and reports (0037) done (docs/EXPORTS.md); management dashboard (0038) next to verify; report layouts, XLSX and scheduled reports wait for agreed BFCL report definitions.
+3. Non-blocked product work: register export (0036) and reports (0037) done (docs/EXPORTS.md); management dashboard (0038) done; production-readiness / UX hardening in progress (docs/PRODUCTION_READINESS.md); report layouts, XLSX and scheduled reports wait for agreed BFCL report definitions.
 4. Job runners for `due_status_refresh`, `licence_expiry_detection`, `communication_followup`, `housekeeping`: only after the owner agrees the behaviour and acceptance rules.
 5. Scheduler rollout (`pg_cron`): only after the gates in `docs/CRON_PROPOSAL.md`.
 6. Employee/contractor masters, then contractor compliance: after the source audit.

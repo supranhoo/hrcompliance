@@ -184,3 +184,5 @@ LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported 2026-10-04): migration 0037 v
 5. As a user limited to one entity/location (and a department): figures contain only that scope and match the registers for that user.
 6. Check on a phone-width window: no horizontal page scrolling; the trend chart has a text table for screen readers.
 Report PASS/FAIL per step. Do not enable `pg_cron`.
+
+LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported 2026-10-04): migration 0038 verified — `live_gate.sql` and `live_management_dashboard_check.sql` OVERALL PASS; Total Applicable, Overdue and Open Exceptions reconciled with the registers; filters, URL persistence after reload, drill-downs and the Detailed view verified. Migration 0038 is hash-locked.
