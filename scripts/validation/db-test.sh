@@ -5,6 +5,8 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 scripts/validation/check-frozen-migrations.sh
 scripts/validation/test-frozen-lock.sh
+scripts/validation/check-sql-suites.sh
+scripts/validation/test-sql-suite-guard.sh
 scripts/validation/build-live-gate.sh --check
 BASE="${PGURL:-postgresql://postgres@localhost:5432}"
 DB="bfcl_test_$$"
@@ -17,15 +19,17 @@ URL="$BASE/$DB"
 psql "$URL" -f supabase/tests/00_supabase_shim.sql >/dev/null
 for f in supabase/migrations/*.sql; do echo "migrate: $f"; psql "$URL" -f "$f" >/dev/null; v=$(basename "$f" | cut -d_ -f1); psql "$URL" -c "insert into supabase_migrations.schema_migrations(version) values ('$v')" >/dev/null; done
 echo "seed migration: re-run for idempotency"; psql "$URL" -f "$(ls supabase/migrations/*_system_seed.sql)" >/dev/null
+EXECUTED="${TMPDIR:-/tmp}/executed_suites_$$.txt"; : > "$EXECUTED"
 run_tests() { # file marker
+  echo "$1" >> "$EXECUTED"
   OUT=$(command psql -v ON_ERROR_STOP=1 -q "$URL" -f "$1" 2>&1 || true)
   echo "$OUT" | grep -E "ERROR|FAIL|ALL .* PASSED|NOTICE:  ok" | sed -E 's/^psql:[^ ]+ //; s/^(NOTICE|ERROR):  //'
   echo "$OUT" | grep -q "$2" || { echo "SQL TESTS FAILED: $1"; exit 1; }
 }
-run_tests supabase/tests/10_rls_and_rules.sql "ALL DB TESTS PASSED"
-run_tests supabase/tests/20_platform_tests.sql "ALL PLATFORM TESTS PASSED"
-run_tests supabase/tests/30_auth_link_tests.sql "ALL AUTH LINK TESTS PASSED"
-for t in supabase/tests/4*.sql supabase/tests/5*.sql supabase/tests/6*.sql; do n=$(grep -o "ALL [A-Z ]* TESTS PASSED" "$t" | tail -1); run_tests "$t" "$n"; done
+# Every numbered suite (NN_name.sql, except the 00_ shim) is discovered by one pattern and must announce its own pass marker; check-sql-suites.sh then proves none was skipped.
+for t in $(ls supabase/tests/[0-9][0-9]_*.sql | grep -v '/00_'); do n=$(grep -o "ALL [A-Z ]* TESTS PASSED" "$t" | tail -1); [ -n "$n" ] || { echo "SUITE WITHOUT PASS MARKER: $t"; exit 1; }; run_tests "$t" "$n"; done
+scripts/validation/check-sql-suites.sh --executed "$EXECUTED"
+rm -f "$EXECUTED"
 VIOL=$("$PSQL" -qtA -F ' | ' "$URL" -f supabase/tests/security_audit.sql)
 [ -z "$VIOL" ] && echo "ok   - security audit: 0 violations across all public tables/functions" || { echo "FAIL security audit:"; echo "$VIOL"; exit 1; }
 # Concurrency: 40 parallel allocations must yield 40 distinct, gapless ids.
