@@ -91,3 +91,6 @@ Not yet modelled (by dependency order): employee/contractor masters, contractor 
 Tables added: `import_template`, `import_batch`, `import_row` (48 tables). Views added: `v_compliance_master`, `v_compliance_rule_version`, `v_applicability`, `v_compliance_coverage`, `v_alert_rule`,
 `v_alert_routing_issue`, `v_compliance_superseded` (12 views). Columns added: `compliance_instance.human_touched_at/superseded_*` (0025), `compliance_rule_evidence.validity_months/requires_verification/help_text` (0029),
 `status_definition.is_system` (0028). Permissions added: `import.read`, `import.manage` (22). See docs/MASTER_DATA_ADMIN.md and docs/IMPORT_FRAMEWORK.md.
+
+## Authorization dimensions (migration 0033)
+Business-data access = role permission (what you may do) AND scope (where): `scope_all`, or an entity/location match, and — only when the resource has a department — that department. For obligations, **`compliance_master.owner_department_id` is the responsible department used for authorization** (null = not department-specific). Instances, exceptions, exception actions, evidence, applicability and coverage inherit it; alert recipients obey it. Global masters (location, entity, compliance master, reference/config) are not department-scoped. See docs/ACCESS_ADMIN.md.

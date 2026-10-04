@@ -45,7 +45,7 @@ export const complianceMasterSpec: MasterSpec<ComplianceMasterRow> = {
     { key: 'section_reference', label: 'Section / rule reference', type: 'text', max: 200, help: 'As supplied by BFCL — never invented' },
     { key: 'legal_source', label: 'Legal source (citation / URL)', type: 'text', max: 500 },
     { key: 'last_reviewed_at', label: 'Last reviewed', type: 'date' },
-    { key: 'owner_department_id', label: 'Owner department', type: 'select', lookup: { table: 'department', value: 'id', label: 'name', filter: { is_active: true } } },
+    { key: 'owner_department_id', label: 'Responsible department', help: 'Also controls who can see this obligation: people with entity/location scope need this department in their scope. Leave blank for obligations that are not department-specific.', type: 'select', lookup: { table: 'department', value: 'id', label: 'name', filter: { is_active: true } } },
     { key: 'default_owner_user_id', label: 'Default owner', type: 'select', lookup: { table: 'app_user', value: 'id', label: 'email', filter: { status: 'active' } }, help: 'New obligations are assigned to this person' },
     { key: 'effective_from', label: 'Effective from', type: 'date' }, { key: 'effective_to', label: 'Effective to', type: 'date' },
     active,
