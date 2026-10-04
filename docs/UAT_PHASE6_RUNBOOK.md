@@ -140,3 +140,14 @@ LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported): `live_gate.sql` OVERALL PAS
 Do not enable `pg_cron`. Report each step as PASS/FAIL.
 
 LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported 2026-10-04): migration 0032 (Job Monitor) verified — `live_gate.sql` OVERALL PASS, `live_job_monitor_check.sql` OVERALL PASS, Job Monitor UI checks passed (reason mandatory, audit written, `job.read` cannot modify). Migration 0032 is hash-locked.
+
+## Users / Roles / Permissions / Scope live verification (migration 0033, after deployment)
+1. SQL Editor: run `supabase/tests/live_gate.sql` (expect 33 migrations, 48 tables, 17 views, 23 permissions, audit 0), then `supabase/dev-samples/live_user_admin_check.sql` (expect OVERALL PASS, 12 checks).
+2. As SUPER_ADMIN open Administration → **Roles & Permissions**. Open a custom or system role, change one permission, save without a reason (expect “A reason is required”), then with a reason (expect saved; the History tab shows the grant/removal with the reason).
+3. Try to remove `role.admin` from SUPER_ADMIN: expect the red “removes an administrative permission” note and, on save, a confirmation dialog (self-lockout). **Cancel** it. (Do not confirm on live: this would remove your own access.)
+4. **Users** → open another user → Roles tab: assign/remove a role with a reason; History/Scope history shows it.
+5. Users → Scope tab for a test user: choose an entity (or location) and a department, enter a reason, “Replace scope”. “Current access” text shows the effect; Scope history shows granted rows. Choose only a department: expect “A department only narrows…”.
+6. Department scope, as the test user (signed in separately): obligations whose Compliance Master has a **Responsible department** are visible only if the user holds that department; obligations with no responsible department follow entity/location only; Location / Compliance Masters stay visible.
+7. As a user with `user.admin` but not `role.admin`: can invite and set scope/status, cannot change roles (Roles tab read-only; Roles & Permissions has no editing).
+8. Try to disable the only remaining `role.admin` holder via a second SUPER_ADMIN test user only if one exists; otherwise rely on the SQL suite (the guard is covered there).
+Report PASS/FAIL per step. Do not enable `pg_cron`.
