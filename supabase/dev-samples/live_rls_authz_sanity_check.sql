@@ -1,7 +1,7 @@
 -- LIVE AUTHORIZATION SANITY CHECK for migration 0039 (RLS evaluated once per statement).
 -- READ-ONLY against application data; uses a session-local temp function (pg_temp, disappears when the session ends). Grants nothing, creates no permanent object, changes no data.
 -- Run: Supabase SQL Editor -> new empty tab -> paste this ENTIRE file -> Run once. Nothing to edit. Last line is "-- END OF FILE".
--- It AUTO-DISCOVERS three existing, ACTIVE, auth-linked users, PREFERRING one that holds all three read permissions (compliance.read, exception.read, licence.read); otherwise the user holding the most (then first by email):
+-- It AUTO-DISCOVERS three existing, ACTIVE, auth-linked users, PREFERRING one that holds compliance.read, exception.read, licence.read and master.read (the dashboard needs it for locations); otherwise the user holding the most (then first by email):
 --   profile 1: scope_all = true
 --   profile 2: restricted, with entity or location scope AND department scope
 --   profile 3: restricted, with entity or location scope and NO department scope
