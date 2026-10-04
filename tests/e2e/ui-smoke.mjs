@@ -165,11 +165,11 @@ for (const [w, h, label] of RUN_AUDIT ? AUDIT_WIDTHS : []) {
     const t0 = Date.now(); await page.goto(BASE + r, { waitUntil: 'domcontentloaded' }); await page.locator('h1').first().waitFor({ timeout: 4000 }).catch(() => {}); await wait(150)
     if (process.env.AUDIT_DUMP) console.log(`audit ${label} ${r} ${Date.now() - t0}ms`)
     if ((await page.locator('h1').count()) === 0) noHeading.push(`${label} ${r}`)
-    const wide = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1 ? [...document.querySelectorAll('body *')].filter((e) => e.getBoundingClientRect().right > window.innerWidth + 1 && !e.closest('.overflow-x-auto')).slice(0, 2).map((e) => e.tagName + '.' + String(e.className).slice(0, 50)).join(' | ') || 'document wider than viewport' : '')
+    const wide = await page.evaluate(() => { const m = document.querySelector('main'); const lim = m ? m.getBoundingClientRect().right : window.innerWidth; const inner = m && m.scrollWidth > m.clientWidth + 1; const wideEls = (document.documentElement.scrollWidth > window.innerWidth + 1 || inner) ? [...document.querySelectorAll('main *')].filter((e) => e.getBoundingClientRect().right > lim + 1 && !e.closest('[role=region]') && !e.closest('.overflow-x-auto')).slice(0, 2).map((e) => e.tagName + '.' + String(e.className).slice(0, 50)).join(' | ') : ''; return wideEls || (inner ? 'main scrolls horizontally' : '') })
     if (wide) overflowFindings.push(`${label} ${r}: ${wide}`)
     if (label === 'desktop' || label === 'phone') {
       await page.evaluate(AXE)
-      const v = await page.evaluate(async () => (await window.axe.run(document, { runOnly: ['wcag2a', 'wcag2aa'] })).violations.filter((x) => x.impact === 'critical' || x.impact === 'serious').map((x) => `${x.id}(${x.nodes.length}): ${x.nodes[0].target.join(' ').slice(0, 70)}`))
+      const v = await page.evaluate(async () => (await window.axe.run(document, { runOnly: ['wcag2a', 'wcag2aa'] })).violations.filter((x) => x.impact === 'critical' || x.impact === 'serious').map((x) => `${x.id}(${x.nodes.length}): ${x.nodes[0].target.join(' ').slice(0, 70)} <= ${(x.nodes[0].html || '').slice(0, 110)}`))
       for (const x of v) axeFindings.push(`${label} ${r}: ${x}`)
     }
   }

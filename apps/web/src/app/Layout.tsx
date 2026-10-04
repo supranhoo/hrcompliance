@@ -115,7 +115,7 @@ export function Layout() {
           <Bell />
           <ProfileMenu />
         </header>
-        <main className="min-w-0 flex-1 overflow-auto p-4 md:p-6"><ErrorBoundary><Outlet /></ErrorBoundary></main>
+        <main tabIndex={0} aria-label="Page content" className="min-w-0 flex-1 overflow-auto p-4 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue md:p-6"><ErrorBoundary><Outlet /></ErrorBoundary></main>
       </div>
     </div>
   )
