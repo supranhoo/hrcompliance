@@ -10,7 +10,7 @@ import { drillTo, filtersFromParams, managementSchema, paramsFromFilters, PERIOD
 import { fmtPct } from '../lib/dashboard'
 
 const Card = ({ title, hint, children, className = '' }: { title: string; hint?: string; children: ReactNode; className?: string }) => (
-  <section className={`rounded-lg border border-line bg-white p-4 ${className}`}><h2 className="text-sm font-semibold text-navy">{title}</h2>{hint && <p className="text-xs text-muted">{hint}</p>}<div className="mt-3">{children}</div></section>
+  <section className={`min-w-0 rounded-lg border border-line bg-white p-4 ${className}`}><h2 className="text-sm font-semibold text-navy">{title}</h2>{hint && <p className="text-xs text-muted">{hint}</p>}<div className="mt-3">{children}</div></section>
 )
 
 /** Stacked monthly bars: completed on time (navy), completed late (amber), overdue open (red), not yet due (grey). Red/amber carry meaning; a table below is the accessible equivalent. */
@@ -70,7 +70,7 @@ export function ManagementView({ d, f }: { d: Management; f: DashFilters }) {
       </div>
       <p className="text-xs text-muted">Compliance {fmtPct(k.compliance_pct)} · On time {fmtPct(k.on_time_pct)} for obligations already due in the period ({d.period.from} to {d.period.to}). {d.licences.department_filter_applies ? '' : 'The department filter does not apply to licences. '}Generated {new Date(d.generated_at).toLocaleString()}.</p>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card title="Compliance trend" hint="Obligations by due month" className="lg:col-span-2">{d.trend.length ? <TrendChart rows={d.trend} /> : <p className="text-sm text-muted">No obligations fall in this period.</p>}</Card>
         <Card title="Risk distribution" hint="Open obligations by risk level">
           <ul className="space-y-2">{[...d.risk].reverse().map((r) => (
@@ -79,12 +79,12 @@ export function ManagementView({ d, f }: { d: Management; f: DashFilters }) {
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card title="By location" hint="Most overdue first"><PerfTable label="Location" rows={d.by_location.map((l) => ({ key: l.code, name: l.name ? `${l.code} · ${l.name}` : l.code, total: l.total, open: l.open, overdue: l.overdue, compliance_pct: l.compliance_pct }))} href={(c) => `/compliance?location_code=${encodeURIComponent(c)}`} /></Card>
         <Card title="By responsible department" hint="Of the compliance master"><PerfTable label="Department" rows={d.by_department.map((x) => ({ key: x.id ?? '', name: x.name, total: x.total, open: x.open, overdue: x.overdue, compliance_pct: x.compliance_pct }))} href={(id) => (id ? drillTo('/compliance', { ...f, department: id }) : null)} /></Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card title="Upcoming" hint="Next 30 days" className="lg:col-span-1">
           {byDate.length === 0 ? <p className="text-sm text-muted">Nothing due in the next 30 days.</p> : (
             <ol className="space-y-3 text-sm">{byDate.map(([date, items]) => (
