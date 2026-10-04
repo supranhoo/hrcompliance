@@ -1,22 +1,26 @@
 # Implementation Plan & Status
 
-| Phase | Scope | Status |
+| Phase | Scope | Status (2026-10-04) |
 |---|---|---|
-| 0 Repo & env | repo, Vite/TS, lint, tests, CI, env | **done locally**; CI workflow written, never run on GitHub; Supabase dev project exists but **no migration applied yet** (container cannot reach supabase.com) |
-| 1 Audit & architecture | source audit, ERD, plan | architecture/ERD/plan **done**; **source audit BLOCKED** (no files received) |
-| 2 DB foundation | masters, identity, audit, config, platform, jobs, RLS | **done locally** (migrations 1–11; 127 checks incl. negative RLS, security audit, concurrency). Employee/contractor masters wait for the audit |
-| 3 App foundation | auth, guards, shell, kit, table | **done locally**: shell (collapsible/mobile sidebar, breadcrumbs, profile menu, notification shell, toasts, error boundary, 404/unauthorized), UI kit, server-driven SmartTable, service contracts, Users + System Health pages, PKCE auth callback + return-path guard (59 tests; browser smoke in headless Chromium). **Real Google login untested** (`docs/AUTH.md`) |
-| 4 Configuration engine | Field/Section/LOV/Status/Rule/Template/SLA/Numbering UIs + evaluator | schema foundation done (fields, sections, LOV, status, rules, versioned definitions, numbering); **no admin screens, no rule evaluator, no dynamic form renderer yet** |
-| 5 Masters | organisation/reference masters | org + authority + law + document types exist; **employee & contractor masters wait for the source audit**; no master-data entry UI yet (Phase 4 designers) |
-| 6 Compliance core | master, applicability, generator, calendar, evidence, exceptions, alerts, dashboard | **database layer done and locally tested (migrations 0014–0022, 11 SQL suites)**; UI done and locally tested: dashboard, compliance/exception/licence/evidence registers, calendar, quick views with status actions; **not yet deployed/verified on the live project**; engines **not scheduled** yet |
-| 7–13 | contractor → cases → communications → import/reports → ops → UAT/release | not started |
+| 0 Repo & env | repo, Vite/TS, lint, tests, CI, env | **done**; CI (web, PostgreSQL 16 and 17) runs on every push; Supabase `bfcl-hrc-dev` (PostgreSQL 17) deploys migrations from `claude/peaceful-wozniak-gyfjaw` |
+| 1 Audit & architecture | source audit, ERD, plan | architecture/ERD/plan **done**; **source audit BLOCKED** (source workbooks never received) |
+| 2 DB foundation | masters, identity, audit, config, platform, jobs, RLS | **done and live-verified** (migrations 0001–0013) |
+| 3 App foundation | auth, guards, shell, kit, table | **done**; Google sign-in live |
+| 4 Configuration engine | LOV / status / settings / alert rules / exception settings | **done and live-verified** (admin screens, migrations 0026–0030, 0034) |
+| 5 Masters | organisation / reference / compliance masters | **done and live-verified** (Compliance Master, rule versions, applicability, licences, reference masters, generic import 0031); **employee & contractor masters BLOCKED** on the source audit |
+| 6 Compliance core | master, applicability, generator, calendar, evidence, exceptions, alerts, dashboard, notifications | **done and live-verified** (0014–0025) |
+| Platform | users / roles / permissions / scope (incl. department scope), Job Monitor | **done and live-verified** (0032, 0033); 0035 (jobs without a runner are disabled) deployed, awaiting live verification |
+| 7–13 | contractor → cases → communications → import mappings/reports → ops → UAT/release | not started; contractor, cases, communications and real import mappings **BLOCKED** (dependency rule below) |
+
+Migrations 0001–0034 are hash-locked (`docs/FROZEN.md`); evidence is in `docs/LIVE_VERIFICATION.md`. `pg_cron` is OFF; schedules are approved but not enabled (`docs/CRON_PROPOSAL.md`, D-036/D-040). Open follow-ups: `docs/FOLLOWUPS.md`.
 
 ## Next increments (in order)
-1. **Deploy 0014–0022 to `bfcl-hrc-dev`** (push triggers it), re-run `security_audit.sql` (must be 0 rows), optionally load `supabase/dev-samples/sample_compliance.sql`, and walk the Phase 6 UAT script (`docs/UAT.md`).
-2. **Source workbooks** → profile → audit → source-to-target map (`docs/migration/SOURCE_TO_TARGET_MAP.md` is the template). Still blocked: no files received.
-3. Schedule the engines (enable `pg_cron`, `docs/OPERATIONS.md`) and build the Job Monitor page.
-4. Phase 4 admin designers (LOV/Status/Field/Rule/Alert/SLA) and master-data entry screens, shaped by the audit.
-5. Phase 5 employee/contractor masters, then Phase 8 contractor compliance.
+1. Live-verify migration 0035, then lock it.
+2. **Source workbooks** → profile → audit → source-to-target map (template `docs/migration/SOURCE_TO_TARGET_MAP.md`). Still blocked: no files received.
+3. Non-blocked product work: register exports / reports over the existing read models (RLS-respecting), operational polish.
+4. Job runners for `due_status_refresh`, `licence_expiry_detection`, `communication_followup`, `housekeeping`: only after the owner agrees the behaviour and acceptance rules.
+5. Scheduler rollout (`pg_cron`): only after the gates in `docs/CRON_PROPOSAL.md`.
+6. Employee/contractor masters, then contractor compliance: after the source audit.
 
 ## Dependency rule
 No contractor, case or import module is started until masters + compliance data model are stable and audited against source data.
