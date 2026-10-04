@@ -151,3 +151,5 @@ LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported 2026-10-04): migration 0032 (
 7. As a user with `user.admin` but not `role.admin`: can invite and set scope/status, cannot change roles (Roles tab read-only; Roles & Permissions has no editing).
 8. Try to disable the only remaining `role.admin` holder via a second SUPER_ADMIN test user only if one exists; otherwise rely on the SQL suite (the guard is covered there).
 Report PASS/FAIL per step. Do not enable `pg_cron`.
+
+LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported 2026-10-04): migration 0033 verified — `live_gate.sql` and `live_user_admin_check.sql` OVERALL PASS; Users/Roles/Permissions/Scope UI and department scope verified; self-lockout confirmation shown and cancelled. Migration 0033 is hash-locked.
