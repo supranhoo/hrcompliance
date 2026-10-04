@@ -149,6 +149,38 @@ await page.setViewportSize({ width: 1360, height: 860 })
 access = profile(['compliance.read']); const mark = requests.length; await page.goto(BASE + '/exceptions'); await wait()
 check('route guard: no exception.read -> permission message, no data request', await page.getByText('You do not have permission to view this page').isVisible() && !requests.slice(mark).some((r) => r.includes('v_exception')))
 check('nav hides sections the user cannot open', (await page.getByRole('link', { name: 'Exceptions' }).count()) === 0)
+// 7. UX audit: every screen at desktop / tablet / phone width - no horizontal overflow, a heading, no script errors, and no serious/critical WCAG A/AA violations (axe-core)
+const AXE = readFileSync(join(root, 'node_modules/axe-core/axe.min.js'), 'utf8')
+const AUDIT_ROUTES = ['/', '/compliance', '/calendar', '/exceptions', '/licences', '/evidence', '/notifications', '/reports', '/admin/compliance-masters', '/admin/rule-versions', '/admin/applicability', '/admin/applicability/coverage', '/admin/licence-types',
+  '/admin/reference/entity', '/admin/reference/location', '/admin/reference/law', '/admin/reference/authority', '/admin/reference/department', '/admin/reference/document-type', '/admin/reference/category', '/admin/alert-rules', '/admin/exception-config', '/admin/lov', '/admin/statuses',
+  '/admin/settings', '/admin/imports', '/admin/imports/new', '/admin/users', '/admin/roles', '/admin/export-history', '/admin/jobs', '/admin/system-health']
+const AUDIT_WIDTHS = [[1360, 860, 'desktop'], [768, 1024, 'tablet'], [390, 800, 'phone']]
+const AUDIT_ROUTES_USED = process.env.AUDIT_ROUTES ? process.env.AUDIT_ROUTES.split(',') : AUDIT_ROUTES
+const RUN_AUDIT = process.env.UX_AUDIT === '1'     // opt-in until the audit findings are fixed (then it becomes the default)
+const auditErrors = errors.length; const overflowFindings = []; const axeFindings = []; const noHeading = []
+for (const [w, h, label] of RUN_AUDIT ? AUDIT_WIDTHS : []) {
+  await page.setViewportSize({ width: w, height: h })
+  for (const r of AUDIT_ROUTES_USED) {
+    const t0 = Date.now(); await page.goto(BASE + r, { waitUntil: 'domcontentloaded' }); await page.locator('h1').first().waitFor({ timeout: 4000 }).catch(() => {}); await wait(150)
+    if (process.env.AUDIT_DUMP) console.log(`audit ${label} ${r} ${Date.now() - t0}ms`)
+    if ((await page.locator('h1').count()) === 0) noHeading.push(`${label} ${r}`)
+    const wide = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1 ? [...document.querySelectorAll('body *')].filter((e) => e.getBoundingClientRect().right > window.innerWidth + 1 && !e.closest('.overflow-x-auto')).slice(0, 2).map((e) => e.tagName + '.' + String(e.className).slice(0, 50)).join(' | ') || 'document wider than viewport' : '')
+    if (wide) overflowFindings.push(`${label} ${r}: ${wide}`)
+    if (label === 'desktop' || label === 'phone') {
+      await page.evaluate(AXE)
+      const v = await page.evaluate(async () => (await window.axe.run(document, { runOnly: ['wcag2a', 'wcag2aa'] })).violations.filter((x) => x.impact === 'critical' || x.impact === 'serious').map((x) => `${x.id}(${x.nodes.length}): ${x.nodes[0].target.join(' ').slice(0, 70)}`))
+      for (const x of v) axeFindings.push(`${label} ${r}: ${x}`)
+    }
+  }
+}
+await page.setViewportSize({ width: 1360, height: 860 })
+if (process.env.AUDIT_DUMP) { console.log('OVERFLOW', JSON.stringify(overflowFindings, null, 1)); console.log('AXE', JSON.stringify(axeFindings, null, 1)); console.log('NOH1', JSON.stringify(noHeading)) }
+if (RUN_AUDIT) {
+check(`UX audit: no horizontal overflow on ${AUDIT_ROUTES.length} screens at desktop, tablet and 390px phone width`, overflowFindings.length === 0, overflowFindings.slice(0, 4).join(' ;; '))
+check('UX audit: every screen has a page heading', noHeading.length === 0, noHeading.slice(0, 4).join(', '))
+check('UX audit: no serious or critical WCAG A/AA violations (axe-core) on desktop and phone', axeFindings.length === 0, axeFindings.slice(0, 4).join(' ;; '))
+check('UX audit: no script errors while visiting every screen', errors.length === auditErrors, JSON.stringify(errors.slice(auditErrors, auditErrors + 3)))
+}
 // 8. unprovisioned account
 access = {}; await page.goto(BASE + '/'); await wait(900)
 check('empty my_access() -> /no-access', page.url().endsWith('/no-access'))
