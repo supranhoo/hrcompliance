@@ -132,7 +132,7 @@ LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported): `live_gate.sql` OVERALL PAS
 
 ## Job Monitor live verification (migration 0032)
 1. SQL Editor: run `supabase/tests/live_gate.sql` (expect 32 migrations, 48 tables, 14 views, 22 permissions, 0 audit violations), then `supabase/dev-samples/live_job_monitor_check.sql` (expect OVERALL PASS).
-2. Sign in as SUPER_ADMIN → Administration → Job Monitor. Expect seven jobs, the “schedules are proposals / scheduler off” notice, and “No runner yet” on the four jobs without a runner.
+2. Sign in as SUPER_ADMIN → Administration → Job Monitor. Expect seven jobs, the “schedules are proposals / scheduler off” notice, and “Not implemented” on the four jobs without a runner (disabled definitions; no Enable button).
 3. Open a job → Disable without a reason: expect “A reason is required”, nothing changes. With a reason: expect disabled; then Enable again with a reason.
 4. SQL Editor (read-only): `select at, table_name, action, reason from audit_log where table_name = 'job_definition' order by at desc limit 5;` expect rows with your reasons.
 5. Sign in as a user with `job.read` but not `job.manage` (e.g. a role granted only `job.read`): the screen lists jobs and runs but shows no Disable/Enable controls; a direct call to `job_set_enabled` is refused.

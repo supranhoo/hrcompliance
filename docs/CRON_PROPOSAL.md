@@ -28,3 +28,6 @@ Approved exactly as listed. Rollout gates, all required before any `cron.schedul
 
 ## Not done on purpose
 No `cron.schedule(...)` call exists in any migration. Enabling will be a separate, reviewed step after approval.
+
+## Update 2026-10-04 (migration 0035)
+The four jobs without a runner (`due_status_refresh`, `licence_expiry_detection`, `communication_followup`, `housekeeping`) are now **disabled definitions**: no runner is invented until the owner agrees the module behaviour and acceptance rules. The placeholder schedules stay recorded here and in `job_definition.schedule_cron`. A database trigger refuses to enable any job that has no runner (Job Monitor, API or SQL), so they cannot be scheduled or switched on by accident. Adding a runner later is a deliberate migration plus tests; only then can the job be enabled and (after the rollout gates) scheduled.

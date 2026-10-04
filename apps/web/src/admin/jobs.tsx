@@ -17,8 +17,8 @@ const fmt = (s: string | null) => (s ? new Date(s).toLocaleString() : '—')
 
 /** Plain-language health of one job: never-run and unscheduled states are reported, not hidden. */
 export function jobHealth(j: Pick<JobRow, 'is_enabled' | 'has_runner' | 'last_status' | 'failures_24h'>): { label: string; tone: Tone } {
+  if (!j.has_runner) return { label: 'Not implemented', tone: 'neutral' }
   if (!j.is_enabled) return { label: 'Disabled', tone: 'neutral' }
-  if (!j.has_runner) return { label: 'No runner yet', tone: 'neutral' }
   if (j.failures_24h > 0 || j.last_status === 'failed') return { label: 'Failing', tone: 'crit' }
   if (!j.last_status) return { label: 'Never run', tone: 'warn' }
   return { label: 'Healthy', tone: 'ok' }
@@ -45,7 +45,7 @@ function Detail({ row, canManage, close }: { row: JobRow; canManage: boolean; cl
           <dl className="grid grid-cols-3 gap-x-3 gap-y-2"><dt className="text-muted">Proposed schedule</dt><dd className="col-span-2 font-mono">{row.schedule_cron ?? '—'} <span className="font-sans text-xs text-muted">(not active: scheduler is off)</span></dd>
             <dt className="text-muted">Attempts / timeout</dt><dd className="col-span-2">{row.max_attempts} attempts · {row.timeout_seconds}s</dd><dt className="text-muted">Last success</dt><dd className="col-span-2">{fmt(row.last_success_at)}</dd>
             <dt className="text-muted">Failures (24h)</dt><dd className="col-span-2">{row.failures_24h}</dd>{row.last_message && <><dt className="text-muted">Last error</dt><dd className="col-span-2 text-status-crit">{row.last_message}</dd></>}{row.last_warning && <><dt className="text-muted">Warning</dt><dd className="col-span-2 text-status-warn">{row.last_warning}</dd></>}</dl>
-          {canManage ? (<div className="space-y-2 border-t border-line pt-3"><Field label={row.is_enabled ? 'Reason for disabling' : 'Reason for enabling'} required error={err}>{(f) => <Textarea {...f} rows={2} value={reason} onChange={(e) => setReason(e.target.value)} />}</Field>
+          {canManage && !row.has_runner ? <p className="border-t border-line pt-3 text-xs text-muted">This job has no runner yet. It stays a disabled definition and cannot be enabled until its behaviour and acceptance rules are agreed and implemented.</p> : canManage ? (<div className="space-y-2 border-t border-line pt-3"><Field label={row.is_enabled ? 'Reason for disabling' : 'Reason for enabling'} required error={err}>{(f) => <Textarea {...f} rows={2} value={reason} onChange={(e) => setReason(e.target.value)} />}</Field>
             <Button variant={row.is_enabled ? 'secondary' : 'primary'} loading={busy} onClick={() => void toggle()}>{row.is_enabled ? 'Disable job' : 'Enable job'}</Button>
             <p className="text-xs text-muted">Enabling a job does not start it. Jobs only run when the scheduler is approved and switched on.</p></div>) : null}
         </div>) },

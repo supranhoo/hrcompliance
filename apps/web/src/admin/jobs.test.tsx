@@ -20,7 +20,7 @@ beforeEach(() => { h.rpc.length = 0; h.perms = new Set(['job.read', 'job.manage'
 
 describe('Job health', () => {
   it('reports the states honestly', () => {
-    expect(jobHealth(job).label).toBe('Healthy'); expect(jobHealth({ ...job, is_enabled: false }).label).toBe('Disabled'); expect(jobHealth({ ...job, has_runner: false }).label).toBe('No runner yet')
+    expect(jobHealth(job).label).toBe('Healthy'); expect(jobHealth({ ...job, is_enabled: false }).label).toBe('Disabled'); expect(jobHealth({ ...job, has_runner: false, is_enabled: false }).label).toBe('Not implemented'); expect(jobHealth({ ...job, has_runner: false }).label).toBe('Not implemented')
     expect(jobHealth({ ...job, last_status: null }).label).toBe('Never run'); expect(jobHealth({ ...job, failures_24h: 2 }).label).toBe('Failing')
   })
 })
@@ -31,6 +31,10 @@ describe('Job Monitor', () => {
     expect(await screen.findByText('A reason is required')).toBeInTheDocument(); expect(h.rpc).toHaveLength(0)
     fireEvent.change(screen.getByLabelText(/Reason for disabling/), { target: { value: 'maintenance' } }); fireEvent.click(screen.getByRole('button', { name: 'Disable job' }))
     await waitFor(() => expect(h.rpc).toHaveLength(1)); expect(h.rpc[0]).toEqual({ fn: 'job_set_enabled', args: { p_code: 'compliance_generation', p_enabled: false, p_reason: 'maintenance' } })
+  })
+  it('a job without a runner cannot be enabled from the screen', async () => {
+    h.data.v_job_status = [{ ...job, id: 'j2', code: 'housekeeping', name: 'Housekeeping', has_runner: false, is_enabled: false, last_status: null }]
+    wrap(); fireEvent.click(await screen.findByText('Housekeeping')); expect(await screen.findByText(/cannot be enabled until its behaviour and acceptance rules are agreed/)).toBeInTheDocument(); expect(screen.queryByRole('button', { name: 'Enable job' })).toBeNull()
   })
   it('read-only users cannot change jobs', async () => { h.perms = new Set(['job.read']); wrap(); fireEvent.click(await screen.findByText('Compliance generation')); await screen.findByText('Failures (24h)'); expect(screen.queryByRole('button', { name: 'Disable job' })).toBeNull() })
 })

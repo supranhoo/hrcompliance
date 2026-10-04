@@ -152,3 +152,6 @@ Department narrows access only where the resource has a department (obligation d
 
 ## D-039 Owner fallback routing is configuration (migration 0034, FU-001)
 The recipients used when an obligation has no active owner are the active alert rule `OWNER_FALLBACK` (roles/users only, versioned, audited, validated by `alert_routing_validation()`), resolved with the same entity/location/department scope as every other recipient. One resolver replaces the 4- and 5-argument copies; no role code is hardcoded. Seeded to the previous behaviour (`role:HEAD_HR`) so nothing changes until BFCL edits it. Rejected: a new settings table (alert rules already provide versioning, guard, audit and UI).
+
+## D-040 Jobs without a runner are disabled definitions (migration 0035)
+Owner decision 2026-10-04: no runners are invented for due_status_refresh, licence_expiry_detection, communication_followup or housekeeping until module behaviour and acceptance rules are agreed. They stay defined (placeholder schedules kept, D-036) but disabled; a trigger refuses to enable a job with no runner. Rejected: leaving them enabled with no code behind them (a future scheduler rollout could call nothing and report success).

@@ -63,42 +63,44 @@ select test.eq('version history audited', (select count(*) from public.audit_log
 
 -- ---------- jobs ----------
 select test.eq('job definitions seeded', (select count(*) from public.job_definition), 7::bigint);
-select test.eq('job start #1 runs', (select should_run from app.job_start('housekeeping','2026-W40','development')), true);
-select test.eq('job start #2 refused (running)', (select reason from app.job_start('housekeeping','2026-W40')), 'already running');
+-- the job-engine tests need an enabled job; the seeded definitions without a runner are (correctly) disabled since 0035, so use a dedicated test definition
+insert into public.job_definition (code, name, runner) values ('platform_test_job', 'Platform test job', 'app.run_alert_generation(text)');
+select test.eq('job start #1 runs', (select should_run from app.job_start('platform_test_job','2026-W40','development')), true);
+select test.eq('job start #2 refused (running)', (select reason from app.job_start('platform_test_job','2026-W40')), 'already running');
 select app.job_finish((select id from public.job_run where idempotency_key='2026-W40'), true, 12);
 select test.eq('success recorded', (select status from public.job_run where idempotency_key='2026-W40'), 'succeeded');
-select test.eq('re-run after success refused', (select reason from app.job_start('housekeeping','2026-W40')), 'already succeeded');
-select test.eq('different key runs', (select should_run from app.job_start('housekeeping','2026-W41')), true);
+select test.eq('re-run after success refused', (select reason from app.job_start('platform_test_job','2026-W40')), 'already succeeded');
+select test.eq('different key runs', (select should_run from app.job_start('platform_test_job','2026-W41')), true);
 -- failure -> retry window -> retry -> exhaust
 select app.job_finish((select id from public.job_run where idempotency_key='2026-W41'), false, 3, '{"message":"boom"}');
 select test.eq('failure schedules retry', (select status from public.job_run where idempotency_key='2026-W41'), 'retry_wait');
-select test.eq('retry blocked inside backoff window', (select reason from app.job_start('housekeeping','2026-W41')), 'waiting for retry window');
+select test.eq('retry blocked inside backoff window', (select reason from app.job_start('platform_test_job','2026-W41')), 'waiting for retry window');
 update public.job_run set next_retry_at = now() - interval '1 second' where idempotency_key='2026-W41';
-select test.eq('retry allowed after window', (select reason from app.job_start('housekeeping','2026-W41')), 'retry');
+select test.eq('retry allowed after window', (select reason from app.job_start('platform_test_job','2026-W41')), 'retry');
 select test.eq('attempt incremented', (select attempt from public.job_run where idempotency_key='2026-W41'), 2);
 select app.job_finish((select id from public.job_run where idempotency_key='2026-W41'), false, null, '{"message":"boom2"}');
 update public.job_run set next_retry_at = now() - interval '1 second' where idempotency_key='2026-W41';
-select app.job_start('housekeeping','2026-W41');
+select app.job_start('platform_test_job','2026-W41');
 select app.job_finish((select id from public.job_run where idempotency_key='2026-W41'), false, null, '{"message":"boom3"}');
 select test.eq('exhausted attempts end as failed', (select status from public.job_run where idempotency_key='2026-W41'), 'failed');
-select test.eq('failed job not retried beyond max', (select reason from app.job_start('housekeeping','2026-W41')), 'max attempts reached');
+select test.eq('failed job not retried beyond max', (select reason from app.job_start('platform_test_job','2026-W41')), 'max attempts reached');
 -- crashed runner: stale 'running' is reclaimed
-select app.job_start('housekeeping','2026-W42');
+select app.job_start('platform_test_job','2026-W42');
 update public.job_run set started_at = now() - interval '2 hours' where idempotency_key='2026-W42';
-select test.eq('stale running run reclaimed', (select should_run from app.job_start('housekeeping','2026-W42')), true);
+select test.eq('stale running run reclaimed', (select should_run from app.job_start('platform_test_job','2026-W42')), true);
 -- disabled job
 update public.job_definition set is_enabled = false where code = 'alert_generation';
 select test.eq('disabled job does not run', (select should_run from app.job_start('alert_generation','k1')), false);
 select test.denied('unknown job rejected', $$select * from app.job_start('nope','k')$$);
 select test.login('viewer@bfcl.test');
-select test.denied('API role cannot call job_start', $$select * from app.job_start('housekeeping','hack')$$);
+select test.denied('API role cannot call job_start', $$select * from app.job_start('platform_test_job','hack')$$);
 select test.eq('viewer cannot read job runs', test.count('select * from public.job_run'), 0::bigint);
-select test.denied('viewer cannot write job_run', $$insert into public.job_run(job_code,idempotency_key) values ('housekeeping','x')$$);
+select test.denied('viewer cannot write job_run', $$insert into public.job_run(job_code,idempotency_key) values ('platform_test_job','x')$$);
 select test.logout();
 select test.login('headhr@bfcl.test');
 select test.eq('head hr reads job runs', test.count('select * from public.job_run') >= 3, true);
-update public.job_definition set is_enabled=false where code='housekeeping';   -- RLS filters the row: 0 rows updated, no error
-select test.eq('head hr cannot edit job definition (value unchanged)', (select is_enabled from public.job_definition where code='housekeeping'), true);
+update public.job_definition set is_enabled=false where code='platform_test_job';   -- RLS filters the row: 0 rows updated, no error
+select test.eq('head hr cannot edit job definition (value unchanged)', (select is_enabled from public.job_definition where code='platform_test_job'), true);
 select test.logout();
 
 -- ---------- system health ----------
@@ -112,7 +114,7 @@ select test.login('headhr@bfcl.test');
 select test.eq('health: db connected', (public.system_health() -> 'database' ->> 'connected'), 'true');
 select test.eq('health: drive NOT_CONFIGURED', (public.system_health() -> 'integrations' ->> 'google_drive'), 'NOT_CONFIGURED');
 select test.eq('health: gmail NOT_CONFIGURED', (public.system_health() -> 'integrations' ->> 'gmail'), 'NOT_CONFIGURED');
-select test.eq('health: reports failed job', (public.system_health() -> 'latest_failed_job' ->> 'job_code'), 'housekeeping');
+select test.eq('health: reports failed job', (public.system_health() -> 'latest_failed_job' ->> 'job_code'), 'platform_test_job');
 select test.eq('health exposes no secrets', public.system_health()::text ~* '(secret|password|token|key)', false);
 select test.logout();
 \echo ALL PLATFORM TESTS PASSED
