@@ -1,0 +1,40 @@
+name: Verify DEV Deployment
+
+# Separate from build CI on purpose: it depends on Cloudflare Pages finishing its own deployment, so it must never gate or flake the normal CI.
+# Checks the REAL response headers of the deployed DEV site against apps/web/public/_headers. Never weakens a header: a failure means the deployment differs from the file.
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: DEV Cloudflare Pages URL to verify
+        default: https://hrcompliance.pages.dev
+  push:
+    branches: [claude/peaceful-wozniak-gyfjaw]
+    paths: ['apps/web/**']
+
+permissions:
+  contents: read
+
+jobs:
+  verify-headers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify live security headers (retries cover Pages deployment lag)
+        env:
+          TARGET: ${{ inputs.url || 'https://hrcompliance.pages.dev' }}
+        run: |
+          attempts=8
+          for i in $(seq 1 "$attempts"); do
+            echo "::group::attempt $i of $attempts — $TARGET"
+            if node scripts/validation/verify-live-headers.mjs "$TARGET"; then
+              echo "::endgroup::"; echo "PASS on attempt $i"; exit 0
+            fi
+            echo "::endgroup::"
+            [ "$i" -lt "$attempts" ] && sleep 60
+          done
+          echo "FAIL: headers still not matching after $attempts attempts (about $((attempts - 1)) minutes of waiting)"; exit 1
