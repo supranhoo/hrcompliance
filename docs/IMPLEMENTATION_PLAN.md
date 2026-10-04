@@ -9,13 +9,13 @@
 | 4 Configuration engine | LOV / status / settings / alert rules / exception settings | **done and live-verified** (admin screens, migrations 0026–0030, 0034) |
 | 5 Masters | organisation / reference / compliance masters | **done and live-verified** (Compliance Master, rule versions, applicability, licences, reference masters, generic import 0031); **employee & contractor masters BLOCKED** on the source audit |
 | 6 Compliance core | master, applicability, generator, calendar, evidence, exceptions, alerts, dashboard, notifications | **done and live-verified** (0014–0025) |
-| Platform | users / roles / permissions / scope (incl. department scope), Job Monitor | **done and live-verified** (0032, 0033); 0035 (jobs without a runner are disabled) deployed, awaiting live verification |
+| Platform | users / roles / permissions / scope (incl. department scope), Job Monitor | **done and live-verified** (0032, 0033); 0035 (jobs without a runner are disabled) live-verified; register export (0036) live-verified |
 | 7–13 | contractor → cases → communications → import mappings/reports → ops → UAT/release | not started; contractor, cases, communications and real import mappings **BLOCKED** (dependency rule below) |
 
-Migrations 0001–0034 are hash-locked (`docs/FROZEN.md`); evidence is in `docs/LIVE_VERIFICATION.md`. `pg_cron` is OFF; schedules are approved but not enabled (`docs/CRON_PROPOSAL.md`, D-036/D-040). Open follow-ups: `docs/FOLLOWUPS.md`.
+Migrations 0001–0036 are hash-locked (`docs/FROZEN.md`); evidence is in `docs/LIVE_VERIFICATION.md`. `pg_cron` is OFF; schedules are approved but not enabled (`docs/CRON_PROPOSAL.md`, D-036/D-040). Open follow-ups: `docs/FOLLOWUPS.md`.
 
 ## Next increments (in order)
-1. Live-verify migration 0035, then lock it.
+1. (done) migrations 0035 and 0036 live-verified and locked.
 2. **Source workbooks** → profile → audit → source-to-target map (template `docs/migration/SOURCE_TO_TARGET_MAP.md`). Still blocked: no files received.
 3. Non-blocked product work: register export (CSV) done in migration 0036 (docs/EXPORTS.md); report layouts, XLSX and scheduled reports wait for agreed BFCL report definitions.
 4. Job runners for `due_status_refresh`, `licence_expiry_detection`, `communication_followup`, `housekeeping`: only after the owner agrees the behaviour and acceptance rules.

@@ -163,3 +163,5 @@ LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported 2026-10-04): migration 0034 v
 4. As a VIEWER (no `report.export`): no Export button and no Export History menu entry.
 5. As a user with scope limited to one entity/location/department: the CSV contains only the rows visible on screen.
 Report PASS/FAIL per step. Do not enable `pg_cron`.
+
+LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported 2026-10-04): migrations 0035 and 0036 verified — `live_gate.sql` OVERALL PASS (36 migrations, 49 tables, 18 views, 24 permissions, audit 0), `live_job_enable_guard_check.sql` and `live_register_export_check.sql` OVERALL PASS; export, Export History, filters/RLS, Excel opening and permission gating verified. Migrations 0035 and 0036 are hash-locked.

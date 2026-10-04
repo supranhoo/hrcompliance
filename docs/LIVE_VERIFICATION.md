@@ -130,3 +130,17 @@ Migration lock: `supabase/migrations.lock` now holds the SHA-256 of **all 33** m
 | `pg_cron` | not installed; nothing scheduled |
 
 Migration lock: `supabase/migrations.lock` now holds the SHA-256 of **all 34** migrations (0001–0033 unchanged, 0034 added, no migration content modified). FU-001 is closed. New schema work starts at migration 0035.
+
+## LIVE VERIFIED — migrations 0035 (jobs without a runner are disabled) and 0036 (register export) — LIVE `bfcl-hrc-dev`, PostgreSQL 17 (owner-reported, 2026-10-04)
+| Check | Live result |
+|---|---|
+| `supabase/tests/live_gate.sql` | **OVERALL = PASS** (36 migrations, 49 tables, 18 views, 24 permissions, security audit violations 0) |
+| `supabase/dev-samples/live_job_enable_guard_check.sql` (0035) | **OVERALL = PASS** |
+| Job Monitor (0035) | the four no-runner jobs show `Not implemented`; no Enable button on them; the three runner jobs unchanged |
+| `supabase/dev-samples/live_register_export_check.sql` (0036) | **OVERALL = PASS** |
+| Export (0036) | SUPER_ADMIN export verified; Export History verified; export respects current filters and RLS; CSV opens correctly in Excel |
+| Export permission (0036) | a user without `report.export` has no Export button |
+| Formula protection (0036) | verified where safely testable |
+| `pg_cron` | not installed; nothing scheduled |
+
+Migration lock: `supabase/migrations.lock` now holds the SHA-256 of **all 36** migrations (0001–0034 unchanged, 0035 and 0036 added, no migration content modified). New schema work starts at migration 0037.
