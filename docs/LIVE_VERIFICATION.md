@@ -174,3 +174,12 @@ Migration lock: `supabase/migrations.lock` now holds the SHA-256 of **all 37** m
 | `pg_cron` | not installed; nothing scheduled |
 
 Migration lock: `supabase/migrations.lock` now holds the SHA-256 of **all 38** migrations (0001–0037 unchanged, 0038 added, no migration content modified). New schema work starts at migration 0039.
+
+## Migration 0039 (RLS policy performance) — PENDING live verification (not locked)
+- CI on `2609d12`: web, PostgreSQL 16, PostgreSQL 17 all green (run 59). Suite 64 proves RLS equals the original predicate for 12 user profiles.
+- Owner steps (all must pass before 0039 is hash-locked):
+  1. `supabase/tests/live_gate.sql` → 39 migrations, 49 tables, 18 views, 24 permissions, audit violations 0, OVERALL PASS.
+  2. `supabase/dev-samples/live_rls_policy_check.sql` → all PASS.
+  3. `supabase/dev-samples/live_rls_authz_sanity_check.sql` (read-only; edit the three emails: a scope_all user, a restricted entity/location/department user, a restricted user with no department scope) → every row PASS, extra = 0. Verified locally against synthetic data (admin and scoped user: 0 extra rows).
+  4. `node scripts/validation/verify-live-headers.mjs https://hrcompliance.pages.dev` from a machine with internet access. **Not yet run:** the Claude cloud sandbox's network policy denies `hrcompliance.pages.dev` (the 403 came from the sandbox egress proxy, not Cloudflare), so no header result exists yet. Record the actual root / SPA route / hashed asset results here.
+- DEV browser/API timing: not yet measured (needs an authenticated session).
