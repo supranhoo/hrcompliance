@@ -64,7 +64,7 @@ function ProfileMenu() {
   const name = access?.fullName ?? access?.email ?? session?.user.email ?? ''
   return (
     <div ref={ref} className="relative" onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false) }}>
-      <button type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="flex items-center gap-2 rounded px-2 py-1 hover:bg-canvas">
+      <button type="button" aria-haspopup="menu" aria-expanded={open} aria-label={`Account menu for ${name}`} onClick={() => setOpen((o) => !o)} className="flex items-center gap-2 rounded px-2 py-1 hover:bg-canvas">
         <span aria-hidden className="grid size-7 place-items-center rounded-full bg-navy text-xs text-white">{name.slice(0, 1).toUpperCase()}</span>
         <span className="hidden max-w-40 truncate text-sm sm:inline">{name}</span>
       </button>

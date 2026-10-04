@@ -24,7 +24,7 @@ function SettingEditor({ def, row, severities, canEdit, onSaved }: { def: Settin
   })
   const dirty = text.trim() !== initial.trim()
   return (
-    <form className="grid gap-2 rounded border border-line bg-white p-3 sm:grid-cols-[1fr_auto]" onSubmit={(e) => { e.preventDefault(); save.mutate() }}>
+    <form className="grid gap-2 rounded border border-line bg-white p-3 sm:grid-cols-[1fr_auto] [&>*]:min-w-0" onSubmit={(e) => { e.preventDefault(); save.mutate() }}>
       <Field label={def.label} help={def.help} error={error || undefined}>{(f) => <Input {...f} value={text} disabled={!canEdit} onChange={(e) => { setText(e.target.value); setError('') }} />}</Field>
       {canEdit && <div className="self-end"><Button type="submit" disabled={!dirty} loading={save.isPending}>Save</Button></div>}
     </form>

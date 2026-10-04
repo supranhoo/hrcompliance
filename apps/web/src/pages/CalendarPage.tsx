@@ -51,7 +51,7 @@ export function CalendarPage() {
       {q.error ? <ErrorState message={(q.error as Error).message} onRetry={() => void q.refetch()} /> : q.isLoading ? <Skeleton rows={6} className="h-8" /> : (
         <>
           {view === 'month' && <div className="overflow-hidden rounded-lg border border-line bg-white"><div className="grid grid-cols-7 border-b border-line bg-canvas text-center text-xs font-medium text-muted">{['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => <div key={d} className="py-1">{d}</div>)}</div><div className="grid grid-cols-7 border-l border-t border-line">{monthMatrix(anchor.getFullYear(), anchor.getMonth()).map((d) => cell(d, true))}</div></div>}
-          {view === 'week' && <div className="overflow-x-auto rounded-lg border border-line bg-white"><div className="grid min-w-[40rem] grid-cols-7 border-l border-t border-line">{weekDays(anchor).map((d) => cell(d, false))}</div></div>}
+          {view === 'week' && <div tabIndex={0} role="region" aria-label="Week view, scrollable" className="overflow-x-auto rounded-lg border border-line bg-white"><div className="grid min-w-[40rem] grid-cols-7 border-l border-t border-line">{weekDays(anchor).map((d) => cell(d, false))}</div></div>}
           {view === 'agenda' && (items.length === 0 ? <EmptyState title="Nothing due in this period" description="Only obligations in your scope are shown." /> : (
             <ol className="space-y-3">{[...byDate.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, list]) => (
               <li key={date} className="rounded-lg border border-line bg-white p-3"><h2 className="text-sm font-semibold text-navy">{new Date(date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</h2>

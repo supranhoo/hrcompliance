@@ -39,7 +39,7 @@ function Performance() {
       </div>
       <p className="text-xs text-muted">Counts obligations whose due date falls in the period, within your role and scope. “Due to date” are those due on or before today. On-time % = completed on or before the due date ÷ due to date; Compliance % = completed ÷ due to date. Not-applicable obligations are excluded.</p>
       {q.isLoading ? <Skeleton rows={4} /> : q.error ? <ErrorState message={(q.error as Error).message} onRetry={() => void q.refetch()} /> : !rows.length ? <EmptyState title="No obligations in this period" description="Try a wider period. Only obligations in your scope are counted." /> : (
-        <div className="overflow-x-auto rounded-lg border border-line bg-white">
+        <div className="overflow-x-auto rounded-lg border border-line bg-white" tabIndex={0} role="region" aria-label="Report table, scrollable">
           <table className="w-full text-sm">
             <thead className="bg-canvas text-left text-xs uppercase tracking-wide text-muted"><tr><th className="px-3 py-2">Group</th><th className="px-3 py-2 text-right">Obligations</th><th className="px-3 py-2 text-right">Completed</th><th className="px-3 py-2 text-right">On time</th><th className="px-3 py-2 text-right">Late</th><th className="px-3 py-2 text-right">Overdue</th><th className="px-3 py-2 text-right">Not yet due</th><th className="px-3 py-2">On-time %</th><th className="px-3 py-2">Compliance %</th></tr></thead>
             <tbody className="divide-y divide-line">{rows.map((r) => <tr key={r.group_key}><td className="px-3 py-2">{r.group_label}</td><Num v={r.total} /><Num v={r.completed} /><Num v={r.completed_on_time} /><Num v={r.completed_late} /><Num v={r.overdue_open} tone="crit" /><Num v={r.upcoming_open} /><Pct v={r.on_time_pct} /><Pct v={r.compliance_pct} /></tr>)}</tbody>
@@ -63,7 +63,7 @@ function Pipeline() {
         <ExportButton register="report-licence-pipeline" filters={{ months: Number(months) }} rows={flat} cols={cols} disabled={!flat.length} /></div>
       <p className="text-xs text-muted">Active licences and registrations that have an expiry date, by month of expiry, within your scope. “Already expired” are active licences past their expiry date.</p>
       {q.isLoading ? <Skeleton rows={4} /> : q.error ? <ErrorState message={(q.error as Error).message} onRetry={() => void q.refetch()} /> : !pv.lines.length ? <EmptyState title="No licences expire in this horizon" /> : (
-        <div className="overflow-x-auto rounded-lg border border-line bg-white">
+        <div className="overflow-x-auto rounded-lg border border-line bg-white" tabIndex={0} role="region" aria-label="Report table, scrollable">
           <table className="w-full text-sm"><thead className="bg-canvas text-left text-xs uppercase tracking-wide text-muted"><tr><th className="px-3 py-2">Expiry</th>{pv.types.map((t) => <th key={t.code} className="px-3 py-2 text-right">{t.name}</th>)}<th className="px-3 py-2 text-right">Total</th></tr></thead>
             <tbody className="divide-y divide-line">{pv.lines.map((l) => <tr key={l.bucket}><td className={`px-3 py-2 ${l.bucket === 'expired' ? 'font-semibold text-status-crit' : ''}`}>{l.bucket === 'expired' ? 'Already expired' : l.bucket}</td>{pv.types.map((t) => <td key={t.code} className="px-3 py-2 text-right tabular-nums">{l.counts[t.code] ?? 0}</td>)}<td className="px-3 py-2 text-right font-medium tabular-nums">{l.total}</td></tr>)}</tbody></table>
         </div>)}

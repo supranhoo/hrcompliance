@@ -1,16 +1,17 @@
 @import "tailwindcss";
 
-/* Enterprise theme tokens (requirement 61). Status colours carry meaning only. */
+/* Enterprise theme tokens (requirement 61). Status colours carry meaning only.
+   Text colours are chosen for WCAG AA (>= 4.5:1) on white, the page canvas and their own 10% tints; the UX audit (axe-core) enforces it. */
 @theme {
   --color-navy: #0f2747;
   --color-blue: #165d8e;
-  --color-green: #1f8a70;
+  --color-green: #1a7560;
   --color-canvas: #f5f7fa;
   --color-ink: #172033;
-  --color-muted: #65758b;
+  --color-muted: #55657a;
   --color-line: #e3e8ef;
-  --color-status-ok: #1f8a70;
-  --color-status-warn: #b7791f;
+  --color-status-ok: #1a7560;
+  --color-status-warn: #8f5c0f;
   --color-status-crit: #c0392b;
   --color-status-info: #165d8e;
 }

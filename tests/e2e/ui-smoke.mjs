@@ -156,7 +156,8 @@ const AUDIT_ROUTES = ['/', '/compliance', '/calendar', '/exceptions', '/licences
   '/admin/settings', '/admin/imports', '/admin/imports/new', '/admin/users', '/admin/roles', '/admin/export-history', '/admin/jobs', '/admin/system-health']
 const AUDIT_WIDTHS = [[1360, 860, 'desktop'], [768, 1024, 'tablet'], [390, 800, 'phone']]
 const AUDIT_ROUTES_USED = process.env.AUDIT_ROUTES ? process.env.AUDIT_ROUTES.split(',') : AUDIT_ROUTES
-const RUN_AUDIT = process.env.UX_AUDIT === '1'     // opt-in until the audit findings are fixed (then it becomes the default)
+const RUN_AUDIT = process.env.UX_AUDIT !== '0'     // on by default; UX_AUDIT=0 skips it for quick local runs
+access = profile(fx('my_access.json').permissions)   // earlier checks switch to restricted profiles; the audit needs the full one
 const auditErrors = errors.length; const overflowFindings = []; const axeFindings = []; const noHeading = []
 for (const [w, h, label] of RUN_AUDIT ? AUDIT_WIDTHS : []) {
   await page.setViewportSize({ width: w, height: h })

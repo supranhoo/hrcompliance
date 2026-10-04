@@ -61,7 +61,7 @@ export function ImportBatchPage() {
       <div className="flex items-end gap-2"><div className="w-48"><Select aria-label="Show rows" value={filter} options={FILTERS} onChange={(e) => { setFilter(e.target.value); setPage(0) }} /></div>
         <span className="text-sm text-muted">{rows.data ? `${rows.data.total} row(s)` : ''}</span></div>
       {rows.isLoading ? <Skeleton rows={4} /> : rows.error ? <ErrorState message={describeError(rows.error)} /> : (rows.data?.rows ?? []).length === 0 ? <EmptyState title="No rows" /> : (
-        <div className="overflow-x-auto rounded-lg border border-line bg-white"><table className="w-full text-left text-sm"><caption className="sr-only">Rows of {b.batch_no}</caption>
+        <div tabIndex={0} role="region" aria-label="Import rows, scrollable" className="overflow-x-auto rounded-lg border border-line bg-white"><table className="w-full text-left text-sm"><caption className="sr-only">Rows of {b.batch_no}</caption>
           <thead><tr className="border-b border-line text-muted"><th className="p-2">Row</th><th>Status</th><th>Action</th><th>Values</th><th>Problems</th></tr></thead>
           <tbody>{rows.data!.rows.map((r) => (
             <tr key={r.row_no} className="border-b border-line align-top"><td className="p-2">{r.row_no}</td><td><Badge tone={ROW_TONE[r.status] ?? 'neutral'}>{titleCase(r.status)}</Badge></td><td>{r.action ? titleCase(r.action) : '—'}</td>

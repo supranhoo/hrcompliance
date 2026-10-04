@@ -20,7 +20,7 @@ export function TrendChart({ rows }: { rows: Management['trend'] }) {
   const summary = rows.map((r) => `${r.month}: ${r.due} due, ${r.completed_on_time} on time, ${r.completed_late} late, ${r.overdue_open} overdue`).join('; ')
   return (
     <div className="relative overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Compliance trend chart, scrollable">
         <svg role="img" aria-label={`Obligations by due month. ${summary}`} width={Math.max(w, 280)} height={H + 28} className="block">
           {rows.map((r, i) => {
             const x = 4 + i * (bw + 8); let y = H
@@ -42,7 +42,7 @@ export function TrendChart({ rows }: { rows: Management['trend'] }) {
 function PerfTable({ rows, label, href }: { rows: Array<{ key: string; name: string; total: number; open: number; overdue: number; compliance_pct: number | null }>; label: string; href: (key: string) => string | null }) {
   if (!rows.length) return <p className="text-sm text-muted">No obligations in this view.</p>
   return (
-    <div className="overflow-x-auto"><table className="w-full text-sm"><thead className="text-left text-xs text-muted"><tr><th className="pb-1 pr-3 font-medium">{label}</th><th className="pb-1 px-2 text-right font-medium">Obligations</th><th className="pb-1 px-2 text-right font-medium">Open</th><th className="pb-1 px-2 text-right font-medium">Overdue</th><th className="pb-1 pl-3 font-medium">Compliance</th></tr></thead>
+    <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={`${label} performance, scrollable`}><table className="w-full text-sm"><thead className="text-left text-xs text-muted"><tr><th className="pb-1 pr-3 font-medium">{label}</th><th className="pb-1 px-2 text-right font-medium">Obligations</th><th className="pb-1 px-2 text-right font-medium">Open</th><th className="pb-1 px-2 text-right font-medium">Overdue</th><th className="pb-1 pl-3 font-medium">Compliance</th></tr></thead>
       <tbody>{rows.map((r) => { const to = href(r.key); return (
         <tr key={r.key} className="border-t border-line"><td className="py-1.5">{to ? <Link className="text-blue hover:underline" to={to}>{r.name}</Link> : r.name}</td><td className="px-2 py-1.5 text-right tabular-nums">{r.total}</td><td className="px-2 py-1.5 text-right tabular-nums">{r.open}</td>
           <td className={`px-2 py-1.5 text-right tabular-nums ${r.overdue ? 'font-medium text-status-crit' : ''}`}>{r.overdue}</td>
