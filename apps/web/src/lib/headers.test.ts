@@ -21,7 +21,7 @@ describe('Cloudflare Pages security headers', () => {
     expect(connect).toContain("'self'"); expect(connect).toContain('https://*.supabase.co'); expect(connect.split(' ').filter((t) => /^https?:|^wss?:/.test(t)).every((t) => /supabase\.co$/.test(t))).toBe(true)
   })
   it('hashed assets are cached for a year, the HTML shell is never cached', () => {
-    expect(header(block('/assets/*'), 'Cache-Control')).toMatch(/max-age=31536000.*immutable/); expect(header(block('/index.html'), 'Cache-Control')).toBe('no-cache')
+    expect(header(block('/assets/*'), 'Cache-Control')).toMatch(/max-age=31536000.*immutable/); expect(header(block('/index.html'), 'Cache-Control')).toBe('no-cache'); expect(header(block('/'), 'Cache-Control')).toBe('no-cache')
   })
   it('the HTML shell has no inline script that the CSP would block', () => {
     const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8')

@@ -14,6 +14,8 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      # The live-header check must pass against a local emulation of Cloudflare Pages `_headers` handling and must FAIL when the CSP is weakened or a header is dropped.
+      - run: npm run test:headers
       # Real-browser smoke (network intercepted, fixtures generated from the real DB). Uses the Chrome preinstalled on GitHub runners.
       - run: CHROME_PATH="$(command -v google-chrome || command -v chromium-browser || command -v chromium)" npm run test:e2e
   database:

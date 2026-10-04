@@ -59,3 +59,10 @@ Status as of 2026-10-04. Evidence: `docs/LIVE_VERIFICATION.md` (migrations 0001â
 
 ## Verified-today summary (not a go-live claim)
 Live-verified: identity/RBAC with department scope, compliance engines, alerts and notification centre, master-data administration, generic import framework, user/role/permission administration, Job Monitor, register export with logging, reports, management dashboard. CI: 27 SQL suites on PostgreSQL 16 and 17, unit tests, headless-browser checks including the UX audit.
+
+## Security headers â€” live verification (how)
+`apps/web/public/_headers` is copied into the build and read by Cloudflare Pages. To verify the **deployed** site returns exactly those headers (read-only GET requests, no credentials):
+```
+node scripts/validation/verify-live-headers.mjs https://<your-pages-host>
+```
+It compares `/`, an SPA route and a hashed asset against the file (CSP, framing, referrer policy, nosniff, permissions policy, HSTS, no-cache shell, immutable one-year asset caching), and fails if the CSP allows eval/inline script/wildcard script sources or if the page can be framed. CI proves the checker itself (`npm run test:headers`): it passes against a local emulation of Pages' `_headers` handling and fails when the CSP is weakened or a header/cache rule is dropped. **Result against the real Pages URL: not yet run** (the URL is not recorded in the repository; run the command above and record the output in `docs/LIVE_VERIFICATION.md`).

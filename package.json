@@ -14,7 +14,9 @@
     "test:db": "scripts/validation/db-test.sh",
     "check:frozen": "scripts/validation/check-frozen-migrations.sh",
     "validate": "npm run typecheck && npm run lint && npm run test && npm run build && npm run test:db",
-    "test:e2e": "node tests/e2e/ui-smoke.mjs"
+    "test:e2e": "node tests/e2e/ui-smoke.mjs",
+    "test:headers": "node scripts/validation/test-verify-headers.mjs",
+    "verify:headers": "node scripts/validation/verify-live-headers.mjs"
   },
   "devDependencies": {
     "axe-core": "^4.13.0"
