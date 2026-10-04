@@ -173,3 +173,5 @@ LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported 2026-10-04): migrations 0035 
 4. Export CSV from each tab; check Export History lists both.
 5. As a user limited to one entity/location (and a department): the reports contain only that scope.
 Report PASS/FAIL per step. Do not enable `pg_cron`.
+
+LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported 2026-10-04): migration 0037 verified — `live_gate.sql` and `live_reports_check.sql` OVERALL PASS; performance report reconciled to the Compliance Register, grouped totals to the overall total, licence pipeline to Licences & Registrations; both exports in Export History. Migration 0037 is hash-locked.
