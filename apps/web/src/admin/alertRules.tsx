@@ -11,7 +11,7 @@ import { supabase } from '../lib/supabase'
 import { AuditTab } from '../pages/quickviews'
 import { describeError } from './errors'
 import { useLookup } from './lookups'
-import { buildDefinition, CHANNELS, describeRecipient, ESCALATION_CODE, formatOffsets, offsetLabel, parseOffsets, validateRule, type Applies, type Channel } from './alertRule'
+import { buildDefinition, CHANNELS, describeRecipient, ESCALATION_CODE, FALLBACK_CODE, NO_OWNER_CODES, formatOffsets, offsetLabel, parseOffsets, validateRule, type Applies, type Channel } from './alertRule'
 
 export type AlertRuleRow = { id: string; code: string; name: string; version: number; status: string; applies: Applies; offsets: number[]; channels: Channel[]; recipients: string[]; critical: boolean; definition: Record<string, unknown>; effective_from: string | null; effective_to: string | null; change_reason: string | null; row_version: number; is_latest: boolean }
 const SELECT = 'id,code,name,version,status,applies,offsets,channels,recipients,critical,definition,effective_from,effective_to,change_reason,row_version,is_latest'
@@ -26,7 +26,7 @@ function RecipientPicker({ value, onChange, error, allowOwner = true }: { value:
       <legend className="px-1 text-sm font-medium">Recipients</legend>
       <ul className="flex flex-wrap gap-2">{value.map((t) => <li key={t} className="flex items-center gap-1 rounded-full bg-blue/10 px-2 py-1 text-xs">{describeRecipient(t, rn, un)}<button type="button" aria-label={`Remove ${t}`} onClick={() => onChange(value.filter((x) => x !== t))}>✕</button></li>)}</ul>
       <div className="grid gap-2 sm:grid-cols-3">
-        {allowOwner ? <Button variant="secondary" disabled={value.includes('owner')} onClick={() => add('owner')}>Add owner</Button> : <p className="self-center text-xs text-muted">Name roles or users: there is no owner for an unroutable alert.</p>}
+        {allowOwner ? <Button variant="secondary" disabled={value.includes('owner')} onClick={() => add('owner')}>Add owner</Button> : <p className="self-center text-xs text-muted">Name roles or users: this list is used when there is no owner.</p>}
         <div className="flex gap-1"><Select aria-label="Role" value={role} placeholder="Role…" options={roles.data ?? []} onChange={(e) => setRole(e.target.value)} /><Button variant="secondary" disabled={!role} onClick={() => { add(`role:${role}`); setRole('') }}>Add</Button></div>
         <div className="flex gap-1"><Select aria-label="User" value={user} placeholder="User…" options={users.data ?? []} onChange={(e) => setUser(e.target.value)} /><Button variant="secondary" disabled={!user} onClick={() => { add(`user:${user}`); setUser('') }}>Add</Button></div>
       </div>
@@ -38,8 +38,8 @@ function RecipientPicker({ value, onChange, error, allowOwner = true }: { value:
 /** Creates the next version of a rule (or the first version of a new code). The database activates it and retires the previous one; every version is kept. */
 export function AlertRuleForm({ previous, code: fixedCode, onDone }: { previous?: AlertRuleRow; code?: string; onDone: () => void }) {
   const { notify } = useToast(); const qc = useQueryClient(); const isNew = !previous
-  const [code, setCode] = useState(previous?.code ?? fixedCode ?? ''); const [name, setName] = useState(previous?.name ?? (fixedCode === ESCALATION_CODE ? 'Unroutable alert escalation' : ''))
-  const [applies, setApplies] = useState<Applies>(previous?.applies ?? 'compliance'); const [offsets, setOffsets] = useState(previous ? formatOffsets(previous.offsets) : fixedCode === ESCALATION_CODE ? '0' : '-7, -3, 0, 1')
+  const [code, setCode] = useState(previous?.code ?? fixedCode ?? ''); const [name, setName] = useState(previous?.name ?? (fixedCode === ESCALATION_CODE ? 'Unroutable alert escalation' : fixedCode === FALLBACK_CODE ? 'Owner fallback recipients' : ''))
+  const [applies, setApplies] = useState<Applies>(previous?.applies ?? 'compliance'); const [offsets, setOffsets] = useState(previous ? formatOffsets(previous.offsets) : NO_OWNER_CODES.includes(fixedCode ?? '') ? '0' : '-7, -3, 0, 1')
   const [channels, setChannels] = useState<Channel[]>(previous?.channels ?? ['in_app']); const [recipients, setRecipients] = useState<string[]>(previous?.recipients ?? [])
   const [critical, setCritical] = useState(previous?.critical ?? fixedCode === ESCALATION_CODE); const [from, setFrom] = useState(''); const [reason, setReason] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({}); const [busy, setBusy] = useState(false)
@@ -63,7 +63,7 @@ export function AlertRuleForm({ previous, code: fixedCode, onDone }: { previous?
         <Field label="Offsets (days)" required error={errors.offsets} help="Negative = before the due/expiry date, 0 = on the day, positive = after. e.g. -7, -3, 0, 1">{(f) => <Input {...f} value={offsets} onChange={(e) => setOffsets(e.target.value)} />}</Field>
       </div>
       <fieldset className="space-y-1"><legend className="text-sm font-medium">Channels</legend>{CHANNELS.map((c) => <label key={c.value} className="mr-4 inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={channels.includes(c.value)} onChange={(e) => setChannels(e.target.checked ? [...channels, c.value] : channels.filter((x) => x !== c.value))} />{c.label}</label>)}{errors.channels && <p role="alert" className="text-xs text-status-crit">{errors.channels}</p>}</fieldset>
-      <RecipientPicker value={recipients} onChange={setRecipients} error={errors.recipients} allowOwner={(previous?.code ?? fixedCode ?? code) !== ESCALATION_CODE} />
+      <RecipientPicker value={recipients} onChange={setRecipients} error={errors.recipients} allowOwner={!NO_OWNER_CODES.includes(previous?.code ?? fixedCode ?? code)} />
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={critical} onChange={(e) => setCritical(e.target.checked)} /> Critical rule — routing problems block production activation</label>
       <div className="grid gap-3 sm:grid-cols-2"><Field label="Effective from" error={errors.effectiveFrom} help="Blank = today">{(f) => <DatePicker {...f} value={from} onChange={(e) => setFrom(e.target.value)} />}</Field></div>
       <Field label="Change reason" required error={errors.reason} help="Recorded in the audit history">{(f) => <Textarea {...f} rows={2} value={reason} onChange={(e) => setReason(e.target.value)} />}</Field>
@@ -93,9 +93,10 @@ function Detail({ row, canEdit, close }: { row: AlertRuleRow; canEdit: boolean; 
 }
 
 type Issue = { rule_code: string; severity: string; problem: string }
-function RoutingPanel({ canEdit, onConfigure }: { canEdit: boolean; onConfigure: () => void }) {
+function RoutingPanel({ canEdit, onConfigure }: { canEdit: boolean; onConfigure: (code: string) => void }) {
   const issues = useQuery({ queryKey: ['alert-admin', 'issues'], enabled: !!supabase, queryFn: async (): Promise<Issue[]> => { const { data, error } = await supabase!.from('v_alert_routing_issue').select('rule_code,severity,problem'); if (error) throw error; return (data ?? []) as Issue[] } })
   const esc = useQuery({ queryKey: ['alert-admin', 'escalation'], enabled: !!supabase, queryFn: async () => { const { data, error } = await supabase!.from('v_alert_rule').select('recipients,version').eq('code', ESCALATION_CODE).eq('status', 'active').maybeSingle(); if (error) throw error; return data as { recipients: string[]; version: number } | null } })
+  const fb = useQuery({ queryKey: ['alert-admin', 'fallback'], enabled: !!supabase, queryFn: async () => { const { data, error } = await supabase!.from('v_alert_rule').select('recipients,version').eq('code', FALLBACK_CODE).eq('status', 'active').maybeSingle(); if (error) throw error; return data as { recipients: string[]; version: number } | null } })
   const health = useQuery({ queryKey: ['system-health'], enabled: !!supabase, retry: false, queryFn: async () => { const { data, error } = await supabase!.rpc('system_health'); if (error) throw error; return data as { environment?: string; unroutable_alerts?: number } } })
   const errors = (issues.data ?? []).filter((i) => i.severity === 'error').length
   return (
@@ -108,8 +109,12 @@ function RoutingPanel({ canEdit, onConfigure }: { canEdit: boolean; onConfigure:
         {esc.data && <span>{esc.data.recipients.map((r) => describeRecipient(r)).join('; ')}</span>}
         <Badge tone={errors ? 'crit' : 'ok'}>{errors ? `${errors} routing error(s)` : 'Routing valid'}</Badge>
         {typeof health.data?.unroutable_alerts === 'number' && <Badge tone={health.data.unroutable_alerts ? 'crit' : 'ok'}>{health.data.unroutable_alerts} unroutable alert(s)</Badge>}
-        {canEdit && <Button onClick={onConfigure}>{esc.data ? 'Change escalation recipients' : 'Configure escalation recipients'}</Button>}
+        {canEdit && <Button onClick={() => onConfigure(ESCALATION_CODE)}>{esc.data ? 'Change escalation recipients' : 'Configure escalation recipients'}</Button>}
       </div>
+      <div className="flex flex-wrap items-center gap-2 text-sm"><span className="font-medium">Owner fallback:</span>
+        <Badge tone={fb.data ? 'ok' : 'warn'}>{fb.data ? `Configured (v${fb.data.version})` : 'Not configured'}</Badge>{fb.data && <span>{fb.data.recipients.map((r) => describeRecipient(r)).join('; ')}</span>}
+        {canEdit && <Button variant="secondary" onClick={() => onConfigure(FALLBACK_CODE)}>{fb.data ? 'Change owner fallback' : 'Configure owner fallback'}</Button>}
+        <span className="text-xs text-muted">Who receives an alert when the obligation has no active owner.</span></div>
       {(issues.data ?? []).length > 0 && <ul className="space-y-1 text-sm" aria-label="Routing issues">{issues.data!.map((i, k) => <li key={k} className={i.severity === 'error' ? 'text-status-crit' : 'text-status-warn'}><strong>{i.rule_code}</strong>: {i.problem}</li>)}</ul>}
     </section>
   )
@@ -125,12 +130,12 @@ const cols: ColumnDef<AlertRuleRow, unknown>[] = [
 export function AlertRulesPage() {
   const { access } = useAuth(); const canEdit = can(access, 'config.write'); const [form, setForm] = useState<{ code?: string } | null>(null)
   return (<div className="space-y-4">
-    <RoutingPanel canEdit={canEdit} onConfigure={() => setForm({ code: ESCALATION_CODE })} />
+    <RoutingPanel canEdit={canEdit} onConfigure={(code) => setForm({ code })} />
     <Register<AlertRuleRow> id="alert-rules" title="Alert Rules" table="v_alert_rule" select={SELECT} columns={cols} getRowId={(r) => r.id} searchColumns={['code', 'name']} defaultSort={{ id: 'code', desc: false }} searchPlaceholder="Search alert rules…"
       filterDefs={[{ key: 'status', label: 'State', options: [{ value: 'active', label: 'Active' }, { value: 'retired', label: 'Retired (history)' }] }, { key: 'applies', label: 'Applies to', options: [{ value: 'compliance', label: 'Compliance' }, { value: 'licence', label: 'Licence' }] }]}
       quickViewTitle={(r) => `${r.code} · v${r.version}`} renderQuickView={(r, close) => <Detail row={r} canEdit={canEdit} close={close} />}
       actions={canEdit ? <Button onClick={() => setForm({})}>New alert rule</Button> : undefined} />
-    <Dialog open={!!form} onClose={() => setForm(null)} title={form?.code === ESCALATION_CODE ? 'Escalation recipients for unroutable alerts' : 'New alert rule'}>
+    <Dialog open={!!form} onClose={() => setForm(null)} title={form?.code === ESCALATION_CODE ? 'Escalation recipients for unroutable alerts' : form?.code === FALLBACK_CODE ? 'Fallback recipients when an obligation has no owner' : 'New alert rule'}>
       {form && <EscalationOrNew code={form.code} onDone={() => setForm(null)} />}
     </Dialog>
     {!canEdit && <EmptyState title="Read-only" description="Changing alert rules needs the configuration permission." />}

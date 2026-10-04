@@ -45,6 +45,15 @@ describe('Alert rules & D-001 routing', () => {
     expect(h.rpc.find((r) => r.fn === 'config_new_version')!.args).toMatchObject({ p_kind: 'alert_rule', p_code: 'UNROUTABLE_ESCALATION', p_reason: 'BFCL escalation owners', p_effective_from: null,
       p_definition: { applies: 'compliance', offsets: [0], channels: ['in_app'], recipients: ['role:HEAD_HR'], critical: true } })
   })
+  it('owner fallback: shows its state and configures OWNER_FALLBACK through the config API without allowing "owner"', async () => {
+    h.data.v_alert_rule = [rule, { ...rule, id: 'r2', code: 'OWNER_FALLBACK', name: 'Owner fallback recipients', version: 1, recipients: ['role:HEAD_HR'], offsets: [0], critical: false, definition: { applies: 'compliance', offsets: [0], channels: ['in_app'], recipients: ['role:HEAD_HR'] } }]
+    wrap(); expect(await screen.findByText('Configured (v1)')).toBeInTheDocument()
+    fireEvent.click(await screen.findByRole('button', { name: 'Change owner fallback' })); expect(await screen.findByLabelText(/Rule code/)).toHaveValue('OWNER_FALLBACK'); expect(screen.queryByRole('button', { name: 'Add owner' })).toBeNull()
+    fireEvent.change(screen.getByLabelText(/Change reason/), { target: { value: 'route to HR heads' } }); fireEvent.click(screen.getByRole('button', { name: /Save as new version|Create rule/ }))
+    await waitFor(() => expect(h.rpc.filter((r) => r.fn === 'config_new_version')).toHaveLength(1))
+    expect(h.rpc.find((r) => r.fn === 'config_new_version')!.args).toMatchObject({ p_kind: 'alert_rule', p_code: 'OWNER_FALLBACK', p_reason: 'route to HR heads' })
+  })
+  it('owner fallback not configured is flagged', async () => { wrap(); expect(await screen.findByText('Not configured')).toBeInTheDocument(); expect(screen.getByRole('button', { name: 'Configure owner fallback' })).toBeInTheDocument() })
   it('a new version of an existing rule keeps its other settings (e.g. a "when" condition) and never edits the old version', async () => {
     wrap(); fireEvent.click(await screen.findByText('DEFAULT_COMPLIANCE_ALERT')); fireEvent.click(await screen.findByRole('button', { name: 'Create new version…' }))
     fireEvent.change(await screen.findByLabelText(/Offsets/), { target: { value: '-14, -7, 0' } }); fireEvent.change(screen.getByLabelText(/Change reason/), { target: { value: 'earlier reminder' } })

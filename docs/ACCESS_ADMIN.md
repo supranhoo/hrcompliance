@@ -35,6 +35,6 @@ Implementation: new overloads `app.in_scope(entity, location, department)`, `app
 **Operational consequence:** once a master has an owning department, restricted users without that department no longer see its obligations. Grant department scope deliberately; the Users → Scope tab says so and shows the effect.
 
 ## Known limits
-- `generate_alerts` and `resolve_recipients` still route the “owner has no active user” fallback to the role whose code is `HEAD_HR` (a routing default from 0020, not an access decision). Making that fallback configurable is a follow-up.
+- The “owner has no active user” fallback is configuration (alert rule `OWNER_FALLBACK`, migration 0034, FU-001), not a role literal. It is seeded as `role:HEAD_HR` to preserve earlier behaviour; BFCL edits it on the Alert Rules screen.
 - System roles keep their name; their permissions are editable.
 - Permissions cannot be created or deleted from the UI.

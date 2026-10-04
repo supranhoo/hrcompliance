@@ -149,3 +149,6 @@ Rejected: hardcoding "SUPER_ADMIN" checks (contradicts permission-driven access)
 
 ## D-038 Department scope (owner decision, folded into migration 0033)
 Department narrows access only where the resource has a department (obligation department = master owner department; null = entity/location rules only); scope_all bypasses; global masters stay globally readable; department alone never grants access. Added as overloads so existing 2-dimension callers are unchanged; enforced by RLS, coverage and alert recipient resolution. Rejected: a mandatory department on every record (many obligations are entity/location-wide); frontend-only filtering.
+
+## D-039 Owner fallback routing is configuration (migration 0034, FU-001)
+The recipients used when an obligation has no active owner are the active alert rule `OWNER_FALLBACK` (roles/users only, versioned, audited, validated by `alert_routing_validation()`), resolved with the same entity/location/department scope as every other recipient. One resolver replaces the 4- and 5-argument copies; no role code is hardcoded. Seeded to the previous behaviour (`role:HEAD_HR`) so nothing changes until BFCL edits it. Rejected: a new settings table (alert rules already provide versioning, guard, audit and UI).

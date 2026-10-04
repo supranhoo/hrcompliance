@@ -41,3 +41,7 @@ export function describeRecipient(t: string, roleNames: Record<string, string> =
   return t
 }
 export const ESCALATION_CODE = 'UNROUTABLE_ESCALATION'
+/** Recipients used instead of the owner when an obligation has no active owner. Roles/users only (never 'owner'). */
+export const FALLBACK_CODE = 'OWNER_FALLBACK'
+/** Rules whose recipient list names who to use when there is no owner, so 'owner' makes no sense in them. */
+export const NO_OWNER_CODES: readonly string[] = [ESCALATION_CODE, FALLBACK_CODE]
