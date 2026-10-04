@@ -155,3 +155,11 @@ Report PASS/FAIL per step. Do not enable `pg_cron`.
 LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported 2026-10-04): migration 0033 verified — `live_gate.sql` and `live_user_admin_check.sql` OVERALL PASS; Users/Roles/Permissions/Scope UI and department scope verified; self-lockout confirmation shown and cancelled. Migration 0033 is hash-locked.
 
 LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported 2026-10-04): migration 0034 verified — `live_gate.sql` and `live_owner_fallback_check.sql` OVERALL PASS; Alert Rules → Owner fallback shows Configured (v1) with Head HR; no live recipients changed. Migration 0034 is hash-locked.
+
+## Register export live verification (migration 0036, after deployment)
+1. SQL Editor: run `supabase/tests/live_gate.sql` (expect 36 migrations, 49 tables, 18 views, 24 permissions), then `supabase/dev-samples/live_register_export_check.sql` (expect OVERALL PASS).
+2. As SUPER_ADMIN open Compliance Register, apply a filter, click **Export**: a CSV downloads; open it in Excel (accents correct, any text starting with `=`/`+`/`-`/`@` shows with a leading apostrophe).
+3. Administration → **Export History** shows that export with the filters and row count.
+4. As a VIEWER (no `report.export`): no Export button and no Export History menu entry.
+5. As a user with scope limited to one entity/location/department: the CSV contains only the rows visible on screen.
+Report PASS/FAIL per step. Do not enable `pg_cron`.

@@ -6,6 +6,11 @@ import { Button, Drawer, Select, type Option } from '../ui'
 import { useServerTable } from '../../hooks/useServerTable'
 import { useLovOptions, useStatusOptions } from '../../hooks/useLookups'
 import { filtersFromSearch } from '../../lib/urlFilters'
+import { useAuth } from '../../app/AuthProvider'
+import { useToast } from '../../app/Toasts'
+import { can } from '../../lib/access'
+import { supabase } from '../../lib/supabase'
+import { buildCsv, downloadCsv, exportFileName, fetchAllRows, type ExportColumn } from '../../lib/exportCsv'
 import { useLookup } from '../../admin/lookups'
 import type { Lookup } from '../../admin/spec'
 import type { FilterValue, PageQuery } from '../../lib/query'
@@ -33,6 +38,10 @@ export type RegisterProps<T> = {
   searchPlaceholder?: string
   /** Buttons shown next to the page title (e.g. "New …"). */
   actions?: ReactNode
+  /** CSV columns. Default: every column with a string accessorKey and a string header. */
+  exportColumns?: ExportColumn[]
+  /** Set false to hide Export on a register (e.g. one that holds nothing exportable). */
+  exportable?: boolean
 }
 
 /** Generic register: URL is the single source of filter state; every query is a server page; rows open a side-panel quick view. */
@@ -43,6 +52,20 @@ export function Register<T>(p: RegisterProps<T>) {
   const derived: Derived = p.derive ? p.derive(active) : { filters: Object.fromEntries(Object.entries(active).filter(([k]) => k !== 'q')) }
   const t = useServerTable<T>(p.table, p.select, { searchColumns: p.searchColumns, sort: p.defaultSort, filters: derived.filters, ranges: derived.ranges, initialSearch: active.q })
   const [selected, setSelected] = useState<T | null>(null)
+  const { access } = useAuth(); const { notify } = useToast()
+  const exportCols: ExportColumn[] = p.exportColumns ?? p.columns.flatMap((c) => { const key = (c as { accessorKey?: unknown }).accessorKey; return typeof key === 'string' && typeof c.header === 'string' ? [{ key, header: c.header }] : [] })
+  /** Same server query as the screen (RLS, filters, search, sort), read in full up to the cap, logged first, downloaded only if the log row was written. */
+  async function exportCsv(screenQuery: PageQuery) {
+    if (!supabase) return
+    const q: PageQuery = { ...screenQuery, filters: derived.filters, ranges: derived.ranges, searchColumns: p.searchColumns }   // the filters in the URL, not whatever the table state last held
+    try {
+      const r = await fetchAllRows(supabase, p.table, exportCols.map((c) => c.key).join(','), q)
+      const { error } = await supabase.rpc('export_record', { p_register: p.id, p_filters: { ...(q.filters ?? {}), ...(q.ranges ? { ranges: q.ranges } : {}), ...(q.search ? { search: q.search } : {}) }, p_row_count: r.rows.length, p_limit_reached: r.truncated })
+      if (error) return notify('Export was not recorded, so nothing was downloaded: ' + error.message, 'crit')
+      downloadCsv(exportFileName(p.id), buildCsv(r.rows, exportCols))
+      notify(r.truncated ? `Exported the first ${r.rows.length} of ${r.total} rows (limit reached). Narrow the filters to export the rest.` : `Exported ${r.rows.length} rows`, r.truncated ? 'info' : 'ok')
+    } catch (e) { notify((e as Error).message || 'Export failed', 'crit') }
+  }
   useEffect(() => { document.title = `${p.title} · BFCL HR Compliance` }, [p.title])
 
   const setFilter = (k: string, v: string) => { const n = new URLSearchParams(params); if (v) n.set(k, v); else n.delete(k); setParams(n, { replace: true }) }
@@ -54,7 +77,7 @@ export function Register<T>(p: RegisterProps<T>) {
       <div className="flex flex-wrap items-center justify-between gap-2"><h1 className="text-xl font-semibold text-navy">{p.title}</h1>{p.actions}</div>
       <SmartTable<T> id={p.id} columns={p.columns} data={t.rows} total={t.total} query={t.query} onQueryChange={t.setQuery}
         isLoading={t.isLoading} error={t.error} onRetry={() => void t.refetch()} getRowId={p.getRowId} onRowClick={p.renderQuickView ? setSelected : undefined}
-        searchPlaceholder={p.searchPlaceholder}
+        searchPlaceholder={p.searchPlaceholder} onExport={p.exportable !== false && exportCols.length > 0 && can(access, 'report.export') ? exportCsv : undefined}
         toolbar={<>
           {p.filterDefs.map((d) => <FilterSelect key={d.key} def={d} value={active[d.key] ?? ''} onChange={(v) => setFilter(d.key, v)} />)}
           {chips.map(([k, v]) => <button key={k} type="button" onClick={() => setFilter(k, '')} aria-label={`Remove filter ${k}`} className="rounded-full bg-blue/10 px-2 py-1 text-xs text-blue hover:bg-blue/20">{k.replace(/_/g, ' ')}: {v} ✕</button>)}

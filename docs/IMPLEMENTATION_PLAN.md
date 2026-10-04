@@ -17,7 +17,7 @@ Migrations 0001–0034 are hash-locked (`docs/FROZEN.md`); evidence is in `docs/
 ## Next increments (in order)
 1. Live-verify migration 0035, then lock it.
 2. **Source workbooks** → profile → audit → source-to-target map (template `docs/migration/SOURCE_TO_TARGET_MAP.md`). Still blocked: no files received.
-3. Non-blocked product work: register exports / reports over the existing read models (RLS-respecting), operational polish.
+3. Non-blocked product work: register export (CSV) done in migration 0036 (docs/EXPORTS.md); report layouts, XLSX and scheduled reports wait for agreed BFCL report definitions.
 4. Job runners for `due_status_refresh`, `licence_expiry_detection`, `communication_followup`, `housekeeping`: only after the owner agrees the behaviour and acceptance rules.
 5. Scheduler rollout (`pg_cron`): only after the gates in `docs/CRON_PROPOSAL.md`.
 6. Employee/contractor masters, then contractor compliance: after the source audit.

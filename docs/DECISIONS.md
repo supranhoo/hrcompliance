@@ -155,3 +155,6 @@ The recipients used when an obligation has no active owner are the active alert 
 
 ## D-040 Jobs without a runner are disabled definitions (migration 0035)
 Owner decision 2026-10-04: no runners are invented for due_status_refresh, licence_expiry_detection, communication_followup or housekeeping until module behaviour and acceptance rules are agreed. They stay defined (placeholder schedules kept, D-036) but disabled; a trigger refuses to enable a job with no runner. Rejected: leaving them enabled with no code behind them (a future scheduler rollout could call nothing and report success).
+
+## D-041 Register export is a separate, logged, fail-closed permission (migration 0036)
+Exports leave the system, so they need their own permission (`report.export`), an append-only `export_log` written before the file is produced, and the same RLS-protected reads as the screens (no server-side privileged export). CSV only, formula-injection-safe, 10,000-row cap that is logged. Rejected: a SECURITY DEFINER export function (would bypass scope), client-only logging after download (could be skipped), XLSX/report layouts before BFCL defines reports.

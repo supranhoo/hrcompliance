@@ -16,7 +16,7 @@ import { AuthCallbackPage } from './pages/AuthCallbackPage'
 import { SystemHealthPage } from './pages/SystemHealthPage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { ImportsPage, NewImportPage, ImportBatchPage } from './admin/import'
-import { ComplianceMasterPage, ReferenceMasterPage, RuleVersionsPage, ApplicabilityPage, CoveragePage, LicenceTypesPage, LovPage, StatusesPage, SettingsPage, AlertRulesPage, ExceptionConfigPage, JobMonitorPage, UsersAdminPage, RolesPage } from './admin/pages'
+import { ComplianceMasterPage, ReferenceMasterPage, RuleVersionsPage, ApplicabilityPage, CoveragePage, LicenceTypesPage, LovPage, StatusesPage, SettingsPage, AlertRulesPage, ExceptionConfigPage, JobMonitorPage, UsersAdminPage, RolesPage, ExportHistoryPage } from './admin/pages'
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30_000 } } })
 
@@ -46,6 +46,7 @@ createRoot(document.getElementById('root')!).render(
                     <Route element={<RequirePermission perm="import.read" />}><Route path="admin/imports" element={<ImportsPage />} /><Route path="admin/imports/new" element={<NewImportPage />} /><Route path="admin/imports/:id" element={<ImportBatchPage />} /></Route>
                     <Route element={<RequirePermission perm="user.read" />}><Route path="admin/users" element={<UsersAdminPage />} /></Route>
                     <Route element={<RequirePermission perm="user.read" />}><Route path="admin/roles" element={<RolesPage />} /></Route>
+                    <Route element={<RequirePermission perm="report.export" />}><Route path="admin/export-history" element={<ExportHistoryPage />} /></Route>
                     <Route element={<RequirePermission perm="health.read" />}><Route path="admin/system-health" element={<SystemHealthPage />} /></Route>
                     <Route element={<RequirePermission perm="job.read" />}><Route path="admin/jobs" element={<JobMonitorPage />} /></Route>
                     <Route path="*" element={<NotFoundPage />} />
