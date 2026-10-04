@@ -153,3 +153,5 @@ LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported 2026-10-04): migration 0032 (
 Report PASS/FAIL per step. Do not enable `pg_cron`.
 
 LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported 2026-10-04): migration 0033 verified — `live_gate.sql` and `live_user_admin_check.sql` OVERALL PASS; Users/Roles/Permissions/Scope UI and department scope verified; self-lockout confirmation shown and cancelled. Migration 0033 is hash-locked.
+
+LIVE `bfcl-hrc-dev` (PostgreSQL 17, owner-reported 2026-10-04): migration 0034 verified — `live_gate.sql` and `live_owner_fallback_check.sql` OVERALL PASS; Alert Rules → Owner fallback shows Configured (v1) with Head HR; no live recipients changed. Migration 0034 is hash-locked.

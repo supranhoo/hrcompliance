@@ -119,3 +119,14 @@ Migration lock: `supabase/migrations.lock` now holds the SHA-256 of **all 32** m
 | `pg_cron` | not installed; nothing scheduled |
 
 Migration lock: `supabase/migrations.lock` now holds the SHA-256 of **all 33** migrations (0001–0032 unchanged, 0033 added, no migration content modified). New schema work starts at migration 0034.
+
+## LIVE VERIFIED — migration 0034 (Configuration-driven owner fallback routing, FU-001) — LIVE `bfcl-hrc-dev`, PostgreSQL 17 (owner-reported, 2026-10-04)
+| Check | Live result |
+|---|---|
+| `supabase/tests/live_gate.sql` | **OVERALL = PASS** (34 migrations, 48 tables, 17 views, 23 permissions) |
+| `supabase/dev-samples/live_owner_fallback_check.sql` | **OVERALL = PASS** |
+| Alert Rules → Owner fallback | shows `Configured (v1)` with Head HR |
+| Live configuration | no fallback recipient changes were made |
+| `pg_cron` | not installed; nothing scheduled |
+
+Migration lock: `supabase/migrations.lock` now holds the SHA-256 of **all 34** migrations (0001–0033 unchanged, 0034 added, no migration content modified). FU-001 is closed. New schema work starts at migration 0035.
