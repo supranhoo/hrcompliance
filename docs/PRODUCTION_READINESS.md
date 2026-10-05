@@ -1,6 +1,6 @@
 # Production Readiness Gap Report
 
-Status as of 2026-10-04. Evidence: `docs/LIVE_VERIFICATION.md` (migrations 0001–0038 live-verified on `bfcl-hrc-dev`, PostgreSQL 17, and hash-locked), CI (web, PostgreSQL 16 and 17) on every push. Nothing here is a go-live approval; it lists what stands between the current build and production, grouped by who can unblock it.
+Status as of 2026-10-04. Evidence: `docs/LIVE_VERIFICATION.md` (migrations 0001–0039 live-verified on `bfcl-hrc-dev`, PostgreSQL 17, and hash-locked), CI (web, PostgreSQL 16 and 17) on every push. Nothing here is a go-live approval; it lists what stands between the current build and production, grouped by who can unblock it.
 
 ## 1. Can be completed now (no one else needed)
 | Item | State |
@@ -16,7 +16,7 @@ Status as of 2026-10-04. Evidence: `docs/LIVE_VERIFICATION.md` (migrations 0001�
 ## 2. Needs the BFCL source workbooks
 | Item | Why blocked |
 |---|---|
-| Source audit, profiling and the source-to-target map (`docs/migration/SOURCE_TO_TARGET_MAP.md` is the template) | files never received |
+| Source audit, profiling and the source-to-target map (`docs/migration/SOURCE_TO_TARGET_MAP.md` is the template) | files received 2026-10-05; Phases 1–3 (audit, cleaning, mapping/design) done; imports/modules not built, see `docs/IMPLEMENTATION_PLAN.md` |
 | Employee master and Contractor master (structure, keys, codes) | shape comes from the audit |
 | Real import mappings (the generic import framework, 0031, is live-verified and ready) | needs the audit |
 | Data migration plan, trial loads and reconciliation reports against source | needs the audit and mappings |

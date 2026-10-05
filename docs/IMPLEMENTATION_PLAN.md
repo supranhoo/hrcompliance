@@ -1,32 +1,35 @@
 # Implementation Plan & Status
 
-| Phase | Scope | Status (2026-10-04) |
+| Phase | Scope | Status (2026-10-05) |
 |---|---|---|
 | 0 Repo & env | repo, Vite/TS, lint, tests, CI, env | **done**; CI (web, PostgreSQL 16 and 17) runs on every push; Supabase `bfcl-hrc-dev` (PostgreSQL 17) deploys migrations from `claude/peaceful-wozniak-gyfjaw` |
-| 1 Audit & architecture | source audit, ERD, plan | architecture/ERD/plan **done**; **source audit BLOCKED** (source workbooks never received) |
+| 1 Audit & architecture | source audit, ERD, plan | architecture/ERD/plan **done**. **Source audit done**: five BFCL workbooks received 2026-10-05 and audited (`docs/migration/PHASE1_SOURCE_AUDIT.md`); Phase 2 conservative cleaning done and **corrected** (16-row classification fix, `PHASE2_CLEANING_REPORT.md`); Phase 3 source-to-target map and target design done and approved (`SOURCE_TO_TARGET_MAP.md`, `PHASE3_TARGET_DESIGN.md`). No source file exists for employee master, contractor master, compliance/licence, disciplinary or communications |
 | 2 DB foundation | masters, identity, audit, config, platform, jobs, RLS | **done and live-verified** (migrations 0001–0013) |
 | 3 App foundation | auth, guards, shell, kit, table | **done**; Google sign-in live |
 | 4 Configuration engine | LOV / status / settings / alert rules / exception settings | **done and live-verified** (admin screens, migrations 0026–0030, 0034) |
-| 5 Masters | organisation / reference / compliance masters | **done and live-verified** (Compliance Master, rule versions, applicability, licences, reference masters, generic import 0031); **employee & contractor masters BLOCKED** on the source audit |
+| 5 Masters | organisation / reference / compliance masters | **done and live-verified** (Compliance Master, rule versions, applicability, licences, reference masters, generic import 0031); **employee & contractor masters NOT STARTED**: no employee or contractor master source file was supplied (only IDs/names inside the GRC and cost workbooks); needs a source file and owner rulings |
 | 6 Compliance core | master, applicability, generator, calendar, evidence, exceptions, alerts, dashboard, notifications | **done and live-verified** (0014–0025) |
 | Platform | users / roles / permissions / scope (incl. department scope), Job Monitor | **done and live-verified** (0032, 0033); 0035 (jobs without a runner are disabled) live-verified; register export (0036) live-verified |
 | 7 Reporting & analytics | register export, compliance performance report, licence expiry pipeline, management dashboard | export (0036), reports (0037) and management dashboard / analytics (0038) **done and live-verified**; management dashboard / management analytics (0038) **done and live-verified**; report layouts / XLSX / scheduled reports wait for agreed BFCL report definitions |
-| 8 Contractor compliance | contractor compliance | **BLOCKED**: needs the contractor master from the source audit |
-| 9 Cases | case management | **BLOCKED**: business rules not agreed; depends on masters audited against source data |
-| 10 Communications | templates, follow-up, email delivery | **BLOCKED**: behaviour not agreed; email integration not configured (needs credentials) |
-| 11 Import mappings | real BFCL source-to-target mappings | **BLOCKED**: source workbooks never received (the generic import framework, 0031, is done and live-verified) |
+| 8 Contractor Cost register + Contractor Compliance | cost/bill/hold register (source received) and, separately, statutory contractor compliance | **Contractor Cost**: source audited/cleaned/mapped (design approved); **NEEDS OWNER DECISION** (`(n)`, spellings, May-2025 conflict, hold semantics, bill-no policy, Dept/Cost-Centre meaning, LS/PR, GFA/HASP) and a contractor master source. **Contractor Compliance**: **NEEDS ADDITIONAL SOURCE** (the cost workbook is not compliance data) |
+| 9a Grievance (GRC) | grievance register | source audited/cleaned/mapped; design approved as a **standalone module** (not `exception`); **NEEDS OWNER DECISION** (OC-13…19: duplicates, categories, status/SLA, ID policy) before build/import |
+| 9b Government & ESIC Liaison | generic liaison register (ESIC as a category) | source audited/cleaned/mapped; design approved; **NEEDS OWNER DECISION** (authority/category/status lists, ESIC narrative handling) |
+| 9c Plant Visit / CAPA | visit log → observation → optional CAPA | source audited/cleaned/mapped; **NEEDS OWNER DECISION** (purpose, CAPA scope, June 2026 source) |
+| 9d **Disciplinary, SCN & Domestic Enquiry Management** | dedicated transactional domain: incident → preliminary fact finding → SCN → service → reply → decision → charge sheet → domestic enquiry → findings → representation → final order → appeal/review → closure (replaces the former generic "Cases") | **DESIGN (Phase 3A) in `docs/DISCIPLINARY_DOMESTIC_ENQUIRY_DESIGN.md`, awaiting approval; no code.** **NEEDS ADDITIONAL SOURCE** (employee master, Certified Standing Orders, authority matrix, templates, rules) and **NEEDS OWNER DECISION** (provider choices, retention/legal hold). No disciplinary source workbook exists, so no historical import mapping |
+| 10 Communications (shared service) | reusable communications layer (queue, send, delivery state, templates, history) used by disciplinary, GRC, liaison, alerts | **DESIGN only** (Phase 3A, shared service section); behaviour not agreed; email/OTP provider not chosen (owner decision, credentials needed); no communications source workbook |
+| 11 Import mappings | real BFCL source-to-target mappings | **Mapping designed** for the five received workbooks (`SOURCE_TO_TARGET_MAP.md`); every field marked YES / BLOCKED / NO. **Not implemented**: each import waits for its target module (not built) and the owner rulings listed in the map; DEV loads only pseudonymised/withheld variants until the owner approves real data. Generic import framework (0031) done and live-verified. No mapping exists or is designed for employee, contractor master, compliance/licence or disciplinary (no source) |
 | 12 Operations | scheduler rollout, remaining job runners | schedules approved but **not enabled**; runners for 4 jobs not agreed (disabled definitions, 0035) |
 | 13 UAT / release | release readiness | not started |
 
-Migrations 0001–0038 are hash-locked (`docs/FROZEN.md`); evidence is in `docs/LIVE_VERIFICATION.md`. `pg_cron` is OFF; schedules are approved but not enabled (`docs/CRON_PROPOSAL.md`, D-036/D-040). Open follow-ups: `docs/FOLLOWUPS.md`.
+Migrations **0001–0039 are frozen and hash-locked** (0039 RLS policy performance live-verified 2026-10-05) (`docs/FROZEN.md`); evidence is in `docs/LIVE_VERIFICATION.md`. `pg_cron` is OFF; schedules are approved but not enabled (`docs/CRON_PROPOSAL.md`, D-036/D-040). Open follow-ups: `docs/FOLLOWUPS.md`.
 
 ## Next increments (in order)
 1. (done) migrations 0035 and 0036 live-verified and locked.
-2. **Source workbooks** → profile → audit → source-to-target map (template `docs/migration/SOURCE_TO_TARGET_MAP.md`). Still blocked: no files received.
+2. (done) **Source workbooks** received → Phase 1 audit → Phase 2 cleaning (corrected) → Phase 3 map/design (approved). **Phase 3A:** Disciplinary / SCN / Domestic Enquiry design (`docs/DISCIPLINARY_DOMESTIC_ENQUIRY_DESIGN.md`) for approval. **Next: Phase 4** build planning, starting with required masters + GRC after the owner decisions.
 3. Non-blocked product work: register export (0036) and reports (0037) done (docs/EXPORTS.md); management dashboard (0038) done; production-readiness / UX hardening in progress (docs/PRODUCTION_READINESS.md); report layouts, XLSX and scheduled reports wait for agreed BFCL report definitions.
 4. Job runners for `due_status_refresh`, `licence_expiry_detection`, `communication_followup`, `housekeeping`: only after the owner agrees the behaviour and acceptance rules.
 5. Scheduler rollout (`pg_cron`): only after the gates in `docs/CRON_PROPOSAL.md`.
-6. Employee/contractor masters, then contractor compliance: after the source audit.
+6. Recommended build order (`PHASE3_TARGET_DESIGN.md`, Phase 3A): required masters → GRC → government liaison → contractor master/cost → plant visit/CAPA; Disciplinary/SCN/Enquiry after the employee master, Standing Orders, authority matrix and communications/OTP/PDF decisions (see its build sequence). Contractor compliance only with a compliance source.
 
 ## Dependency rule
-No contractor, case or import module is started until masters + compliance data model are stable and audited against source data.
+No contractor, grievance, liaison, plant-visit, disciplinary or real-import module is built until its masters are confirmed, its design is approved, and its open owner decisions are answered; each build is a new migration (never touching 0001–0039), RLS-first, live-verified before locking. No module may store real personal data in DEV without explicit owner approval.
