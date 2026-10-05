@@ -183,7 +183,7 @@ Source→existing masters: Unit (GFA/HASP) and Dept/Cost-centre values have **no
 ## 8. Module unblocking assessment
 | Module | Verdict | Basis |
 |---|---|---|
-| Employee Master | **SOURCE NOT FOUND** | Only referential IDs inside GRC (34 distinct); no master list. |
+| Employee Master | **SOURCE NOT FOUND** | Only referential IDs inside GRC (32 distinct non-blank values); no master list. |
 | Contractor Master | **PARTIALLY SUFFICIENT** | 22 contractor base names exist only inside the cost register; no code/PAN/GST/licence/contact. OC-02, OC-03 first. |
 | Contractor Compliance | **SOURCE NOT FOUND** | W1 is cost/hold data, not statutory compliance by contractor. (Contractor bills/cost: partially sufficient — separate module.) |
 | ESIC | **PARTIALLY SUFFICIENT** | 18 free-text liaison entries; no claim-level structured data. OC-21/22. |
