@@ -191,3 +191,7 @@ Migration lock: `supabase/migrations.lock` now holds the SHA-256 of **all 38** m
 - `supabase/dev-samples/live_rls_authz_sanity_check.sql`: OVERALL PASS; no extra and no missing rows.
 - CI on the deployed commit (run 59, `2609d12`): web, PostgreSQL 16, PostgreSQL 17 green. The migration file is unchanged since that commit.
 - Hash-locked unchanged: `migrations.lock` now covers 0001–0039; tamper test requires at least 39. pg_cron remains OFF.
+
+## Migration 0040 (generic attachment foundation) — DEPLOYED TO DEV, PENDING live verification (not locked)
+- Local: full `db-test.sh` on PostgreSQL 16 passes (suite 65 with 80+ assertions, security audit 0, live gate generated for 40 migrations / 53 tables / 19 views / 25 permissions / 13 numbering rules, privacy guard + self-test). CI (web, PG16, PG17) results are recorded in the Phase 5A report.
+- Owner steps before locking: (1) `supabase/tests/live_gate.sql` OVERALL PASS; (2) `supabase/dev-samples/live_attachment_check.sql` OVERALL PASS; (3) storage smoke test `scripts/validation/attachment-smoke-test.js` (synthetic PNG; step 1 uploader, step 2 a different user) all PASS. See `docs/ATTACHMENTS.md`.

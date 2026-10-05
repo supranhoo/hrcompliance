@@ -23,6 +23,8 @@
 
 Migrations **0001–0039 are frozen and hash-locked** (0039 RLS policy performance live-verified 2026-10-05) (`docs/FROZEN.md`); evidence is in `docs/LIVE_VERIFICATION.md`. `pg_cron` is OFF; schedules are approved but not enabled (`docs/CRON_PROPOSAL.md`, D-036/D-040). Open follow-ups: `docs/FOLLOWUPS.md`.
 
+**Phase 5A (2026-10-05):** owner rulings recorded (GRC lifecycle, Option A numbering, role mapping, Supabase Storage); privacy guard implemented; **migration 0040 generic attachment foundation implemented and deployed to DEV, awaiting live verification before hash-lock** (`docs/ATTACHMENTS.md`). GRC schema (0041+) not started.
+
 ## Two independent delivery tracks (2026-10-05)
 **Track A — Core Compliance V1 rollout:** production readiness / UAT continue independently (`docs/CORE_V1_ROLLOUT_CHECK.md`); module expansion is not a prerequisite. **Track B — Module expansion:** `master reconciliation → GRC → Liaison → Contractor Master/Cost → Plant Visit/CAPA`; Disciplinary is a parallel future stream gated on Employee Master, Certified Standing Orders, authority matrix and the communications/PDF/OTP decisions. All open owner questions live in `docs/OWNER_DECISION_PACK_PHASE4.md`; GRC is specified build-ready in `docs/GRC_V1_SPEC.md` (not started).
 

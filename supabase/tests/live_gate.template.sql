@@ -27,7 +27,7 @@ checks(n, check_name, expected, actual, kind) as (values
   (6,  'permissions', '@@EXP_PERMISSIONS@@', (select count(*)::text from public.permission), 'exact'),
   (7,  'roles', '5', (select count(*)::text from public.role), 'exact'),
   (8,  'scheduled-job definitions', '7', (select count(*)::text from public.job_definition), 'exact'),
-  (9,  'numbering rules', '12', (select count(*)::text from public.numbering_rule), 'exact'),
+  (9,  'numbering rules', '13', (select count(*)::text from public.numbering_rule), 'exact'),
   (10, 'active seeded alert rules (3 defaults + OWNER_FALLBACK; BFCL-added rules such as UNROUTABLE_ESCALATION are not counted)', '4', (select count(distinct code)::text from public.config_definition where kind = 'alert_rule' and status = 'active' and code in ('DEFAULT_COMPLIANCE_ALERT','DEFAULT_COMPLIANCE_ESCALATION','DEFAULT_LICENCE_ALERT','OWNER_FALLBACK')), 'exact'),
   (11, 'compliance + exception status definitions', '9', (select count(*)::text from public.status_definition where module in ('compliance','exception')), 'exact'),
   (12, 'RISK list values (low, medium, high, critical)', '4', (select count(*)::text from public.lov_value v join public.lov_set s on s.id = v.set_id where s.code = 'RISK' and v.is_active), 'exact'),
