@@ -5,6 +5,8 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 scripts/validation/check-frozen-migrations.sh
 scripts/validation/test-frozen-lock.sh
+scripts/validation/check-no-confidential-files.sh
+scripts/validation/test-confidential-guard.sh
 scripts/validation/check-sql-suites.sh
 scripts/validation/test-sql-suite-guard.sh
 scripts/validation/build-live-gate.sh --check

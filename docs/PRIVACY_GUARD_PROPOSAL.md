@@ -1,6 +1,6 @@
-# Privacy guard proposal — keep confidential source data out of Git (Phase 4; NOT implemented)
+# Privacy guard — keep confidential source data out of Git (proposed Phase 4; **IMPLEMENTED Phase 5A**, approved PRV-02)
 
-**Status:** proposal for approval (decision PRV-02). Nothing below is implemented yet; no CI or `.gitignore` change has been made in Phase 4.
+**Status (2026-10-05): APPROVED and IMPLEMENTED.** `scripts/validation/check-no-confidential-files.sh` (guard) + `test-confidential-guard.sh` (self-test: 11 prohibited patterns rejected, 3 harmless files accepted, allow-list and artifact-upload rules proven, real repository passes) run in the `web` CI job and in `db-test.sh` (both PostgreSQL jobs). `.gitignore` carries the rules. Differences from the original proposal: CSV is **not** banned by extension (only confidential/forbidden-location CSV); Excel workbooks are banned unless listed in `scripts/validation/confidential-allowlist.txt` (empty); no content scan (binary workbooks are blocked by name/extension). The sections below are the original proposal.
 **Why:** the source workbooks and the cleaned FULL files contain personal and confidential commercial data, and the pseudonym key re-identifies pseudonymised data. They must never enter Git, DEV, CI artifacts or ordinary application storage. Today the only protection is a `.gitignore` line for `data/source/` and discipline; the repository currently tracks **no** spreadsheet or CSV file at all (checked), so a strict rule costs nothing.
 
 ## 1. `.gitignore` additions (proposed)

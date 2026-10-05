@@ -7,6 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Privacy guard (PRV-02): no confidential source data / pseudonym key / output directories tracked, no forbidden artifact uploads; the self-test proves it bites.
+      - run: scripts/validation/check-no-confidential-files.sh && scripts/validation/test-confidential-guard.sh
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci

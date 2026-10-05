@@ -12,3 +12,20 @@ supabase/.temp/
 # Source workbooks are preserved outside Git (may contain personal data); see docs/MIGRATION_PLAN.md
 data/source/
 *.tsbuildinfo
+
+# Privacy guard (PRV-02): confidential source data, cleaned outputs and the pseudonym key must never be committed (see docs/PRIVACY_GUARD_PROPOSAL.md)
+/data/
+/raw/
+source-data/
+source_data/
+phase[0-9]*_out/
+*PSEUDONYM_KEY*
+*FULL_CONFIDENTIAL*
+*CONFIDENTIAL*.xlsx
+*CONFIDENTIAL*.csv
+SUPERSEDED_DO_NOT_USE__*
+# Excel workbooks are ignored by default (no application fixture uses one); a reviewed exception must be added to scripts/validation/confidential-allowlist.txt
+*.xlsx
+*.xlsm
+*.xlsb
+*.xls
