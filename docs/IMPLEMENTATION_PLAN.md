@@ -23,6 +23,9 @@
 
 Migrations **0001–0039 are frozen and hash-locked** (0039 RLS policy performance live-verified 2026-10-05) (`docs/FROZEN.md`); evidence is in `docs/LIVE_VERIFICATION.md`. `pg_cron` is OFF; schedules are approved but not enabled (`docs/CRON_PROPOSAL.md`, D-036/D-040). Open follow-ups: `docs/FOLLOWUPS.md`.
 
+## Two independent delivery tracks (2026-10-05)
+**Track A — Core Compliance V1 rollout:** production readiness / UAT continue independently (`docs/CORE_V1_ROLLOUT_CHECK.md`); module expansion is not a prerequisite. **Track B — Module expansion:** `master reconciliation → GRC → Liaison → Contractor Master/Cost → Plant Visit/CAPA`; Disciplinary is a parallel future stream gated on Employee Master, Certified Standing Orders, authority matrix and the communications/PDF/OTP decisions. All open owner questions live in `docs/OWNER_DECISION_PACK_PHASE4.md`; GRC is specified build-ready in `docs/GRC_V1_SPEC.md` (not started).
+
 ## Next increments (in order)
 1. (done) migrations 0035 and 0036 live-verified and locked.
 2. (done) **Source workbooks** received → Phase 1 audit → Phase 2 cleaning (corrected) → Phase 3 map/design (approved). **Phase 3A:** Disciplinary / SCN / Domestic Enquiry design (`docs/DISCIPLINARY_DOMESTIC_ENQUIRY_DESIGN.md`) for approval. **Next: Phase 4** build planning, starting with required masters + GRC after the owner decisions.

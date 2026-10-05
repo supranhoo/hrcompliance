@@ -1,3 +1,5 @@
+> **SUPERSEDED (2026-10-05):** all owner decisions are now tracked in `docs/OWNER_DECISION_PACK_PHASE4.md` (group 8 carries these rows). Kept for history.
+
 # Owner decision pack
 
 Defaults are proposals only; nothing here is decided until the owner confirms. "Before PROD" = must be decided before production go-live.
