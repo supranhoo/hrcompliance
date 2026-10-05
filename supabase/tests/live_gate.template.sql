@@ -9,8 +9,11 @@ audit as (
 ),
 mig as (select array_agg(version order by version) as versions from supabase_migrations.schema_migrations),
 expected_mig as (select array(select '202610030000' || lpad(g::text, 2, '0') from generate_series(1, @@MIG_COUNT@@) g) as versions),
+-- Functions are located by catalog lookup (schema.name(arg types)), not to_regprocedure(): that call needs USAGE on the schema, which the read-only live verifier deliberately does not have on "app".
+-- Likewise tables/views/grants below come from pg_class / relacl, because information_schema only shows objects and grants visible to the CURRENT role (a least-privilege login would see none and pass vacuously).
+sig as (select p.oid as fo, n.nspname || '.' || p.proname || '(' || replace(oidvectortypes(p.proargtypes), ', ', ',') || ')' as s from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname in ('public', 'app')),
 fn as (
-  select count(*) filter (where to_regprocedure(f) is not null) as present, count(*) as total from unnest(array[
+  select count(*) filter (where exists (select 1 from sig where sig.s = f)) as present, count(*) as total from unnest(array[
     'public.my_access()', 'public.system_health()', 'public.config_new_version(text,text,text,jsonb,text,date)',
     'public.compliance_activate_rule_version(uuid,text)', 'public.compliance_coverage(date)', 'public.compliance_create_manual_instance(uuid,uuid,date,text)',
     'public.compliance_calendar(date,date)', 'public.evidence_replace(uuid,text,text,text,bigint,text,date,text)', 'public.compliance_dashboard()',
@@ -22,8 +25,8 @@ checks(n, check_name, expected, actual, kind) as (values
   (1,  'migrations recorded as applied', '@@MIG_COUNT@@', (select coalesce(cardinality(versions)::text, 'n/a') from mig), 'exact'),
   (2,  'migration versions are exactly 20261003000001..@@MIG_COUNT@@ (no gaps, no extras)', 'match', (select case when (select versions from mig) is null then 'n/a' when (select versions from mig) = (select versions from expected_mig) then 'match' else 'MISMATCH: ' || coalesce(array_to_string((select versions from mig), ','), '') end), 'exact'),
   (3,  'security audit violations', '0', (select count(*)::text from audit), 'exact'),
-  (4,  'application tables in public', '@@EXP_TABLES@@', (select count(*)::text from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE'), 'exact'),
-  (5,  'views in public', '@@EXP_VIEWS@@', (select count(*)::text from information_schema.views where table_schema = 'public'), 'exact'),
+  (4,  'application tables in public', '@@EXP_TABLES@@', (select count(*)::text from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relkind in ('r', 'p')), 'exact'),
+  (5,  'views in public', '@@EXP_VIEWS@@', (select count(*)::text from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relkind = 'v'), 'exact'),
   (6,  'permissions', '@@EXP_PERMISSIONS@@', (select count(*)::text from public.permission), 'exact'),
   (7,  'roles', '5', (select count(*)::text from public.role), 'exact'),
   (8,  'scheduled-job definitions', '7', (select count(*)::text from public.job_definition), 'exact'),
@@ -33,11 +36,11 @@ checks(n, check_name, expected, actual, kind) as (values
   (12, 'RISK list values (low, medium, high, critical)', '4', (select count(*)::text from public.lov_value v join public.lov_set s on s.id = v.set_id where s.code = 'RISK' and v.is_active), 'exact'),
   (13, 'SUPER_ADMIN holds every permission', (select count(*)::text from public.permission), (select count(*)::text from public.role_permission rp join public.role r on r.id = rp.role_id where r.code = 'SUPER_ADMIN'), 'exact'),
   (14, 'public tables without ROW LEVEL SECURITY forced', '0', (select count(*)::text from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relkind = 'r' and not c.relforcerowsecurity), 'exact'),
-  (15, 'tables readable by the anon role', '0', (select count(distinct table_name)::text from information_schema.role_table_grants where table_schema = 'public' and grantee = 'anon'), 'exact'),
+  (15, 'tables readable by the anon role', '0', (select count(*)::text from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relkind in ('r', 'p', 'v', 'm', 'f') and exists (select 1 from aclexplode(c.relacl) a join pg_roles r on r.oid = a.grantee where r.rolname = 'anon')), 'exact'),
   (16, 'extensions installed in public schema', '0', (select count(*)::text from pg_extension e join pg_namespace n on n.oid = e.extnamespace where n.nspname = 'public' and e.extname in ('citext','pg_trgm')), 'exact'),
   (17, 'required functions present', (select total::text from fn), (select present::text from fn), 'exact'),
-  (18, 'frozen-foundation behaviour: my_access() is not callable by anon', 'false', (select has_function_privilege('anon', 'public.my_access()', 'execute')::text), 'exact'),
-  (19, 'engines are not callable by the API role', 'false', (select (has_function_privilege('authenticated', 'app.generate_compliance_instances(date,date)', 'execute') or has_function_privilege('authenticated', 'app.detect_exceptions()', 'execute') or has_function_privilege('authenticated', 'app.generate_alerts()', 'execute'))::text), 'exact'),
+  (18, 'frozen-foundation behaviour: my_access() is not callable by anon', 'false', (select exists (select 1 from sig where sig.s = 'public.my_access()' and has_function_privilege('anon', sig.fo, 'execute'))::text), 'exact'),
+  (19, 'engines are not callable by the API role', 'false', (select exists (select 1 from sig where sig.s in ('app.generate_compliance_instances(date,date)', 'app.detect_exceptions()', 'app.generate_alerts()') and has_function_privilege('authenticated', sig.fo, 'execute'))::text), 'exact'),
   (20, 'PostgreSQL major version (information)', '-', (select (current_setting('server_version_num')::int / 10000)::text), 'info'),
   (21, 'dev admin provisioned, active, linked (information)', '-', coalesce((select u.status || ', scope_all=' || u.scope_all || ', linked=' || (u.auth_user_id is not null)::text from public.app_user u join public.user_role ur on ur.user_id = u.id join public.role r on r.id = ur.role_id where r.code = 'SUPER_ADMIN' limit 1), 'none'), 'info'),
   (23, 'environment label in system_config (information; must be "development" before loading SAMPLE data)', '-', coalesce((select value #>> '{}' from public.system_config where key = 'environment.name'), '(not set)'), 'info'),

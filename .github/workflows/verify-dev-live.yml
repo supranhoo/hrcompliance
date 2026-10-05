@@ -1,0 +1,36 @@
+name: Verify DEV (live, read-only)
+
+# Runs the three READ-ONLY live verification scripts against bfcl-hrc-dev and fails on any FAIL:
+#   supabase/tests/live_gate.sql, supabase/dev-samples/live_attachment_check.sql, supabase/dev-samples/live_org_masters_inventory.sql (published only as a sanitized summary).
+# Manual only. DEV only. No migrations, no writes, no pg_cron. Connects as the dedicated ci_verifier login (column-whitelisted, read-only, see docs/LIVE_VERIFICATION_AUTOMATION.md).
+# Credentials come ONLY from the GitHub Environment "dev-verification" (restricted to the deploy branch). No push / pull_request / schedule trigger exists, so no PR or fork run can ever receive them.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-dev-live
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    # Second lock behind the environment's branch rule: run only from the deploy branch.
+    if: github.ref == 'refs/heads/claude/peaceful-wozniak-gyfjaw'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: dev-verification
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run read-only live verification
+        env:
+          PGHOST: ${{ vars.DEV_DB_HOST }}
+          PGPORT: ${{ vars.DEV_DB_PORT }}
+          PGUSER: ${{ vars.DEV_DB_USER }}
+          PGDATABASE: ${{ vars.DEV_DB_NAME }}
+          PGPASSWORD: ${{ secrets.DEV_DB_PASSWORD }}
+          PGSSLMODE: require
+        run: scripts/validation/dev-live-verify.sh

@@ -1,4 +1,5 @@
-/* DEV storage smoke test for the generic attachment foundation (migration 0040).
+/* MANUAL FALLBACK ONLY - superseded by the automated workflow "Verify DEV storage smoke test" (scripts/validation/dev-storage-smoke.mjs, docs/LIVE_VERIFICATION_AUTOMATION.md).
+ * DEV storage smoke test for the generic attachment foundation (migration 0040).
  * Proves, with a SYNTHETIC 1x1 PNG only (no personal or confidential data):  authorised upload -> private object -> authorised read -> unauthorised read DENIED.
  * It runs in the browser console of the already signed-in DEV app (https://hrcompliance.pages.dev) and uses YOUR OWN session token against Supabase; nothing is sent anywhere else.
  * Only paste the contents of this file from the repository. The URL and the publishable (anon) key are public by design; the service-role key must NEVER be used here.

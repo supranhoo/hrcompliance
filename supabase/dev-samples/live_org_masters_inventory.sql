@@ -1,5 +1,5 @@
 -- LIVE ORG MASTERS INVENTORY (read-only, one SELECT, changes nothing). For the Phase 4 master reconciliation (docs/migration/ORG_MASTER_RECONCILIATION.md).
--- Supabase SQL Editor: new empty tab, paste this ENTIRE file, Run once. Send the result rows back (they are organisation master data, no personal data).
+-- The workflow "Verify DEV (live, read-only)" runs this file and publishes ONLY counts and GFA/HASP/Common flags (never the rows). A detailed inventory needs the owner's explicit approval: then paste this ENTIRE file into a new Supabase SQL Editor tab and run it once (organisation master data, no personal data).
 -- Shows what already exists in each organisation master so GFA / HASP / Common / departments / designations / authorities are matched to REAL records and nothing is invented.
 select 'entity' as master, code, name, null::text as parent_or_link, is_active from public.entity
 union all select 'location', l.code, l.name, e.code, l.is_active from public.location l left join public.entity e on e.id = l.entity_id

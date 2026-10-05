@@ -1,21 +1,22 @@
 -- Read-only security classification audit. Returns one row per VIOLATION; zero rows = pass.
 -- Run in CI (asserted empty) and in the Supabase SQL editor to verify the real project state.
+-- Grants are read from the catalog ACLs (pg_class.relacl), NOT from information_schema.role_table_grants: that view only lists privileges the CURRENT role
+-- owns, was granted or granted, so a least-privilege verifier login would see none of them and every grant check would pass vacuously.
 with t as (
-  select c.oid, c.relname, c.relowner, c.relrowsecurity as rls, c.relforcerowsecurity as forced
+  select c.oid, c.relname, c.relowner, c.relrowsecurity as rls, c.relforcerowsecurity as forced, c.relacl
   from pg_class c join pg_namespace n on n.oid = c.relnamespace
   where n.nspname = 'public' and c.relkind in ('r','p')
-), pol as (select polrelid, count(*) n from pg_policy group by 1)
+), pol as (select polrelid, count(*) n from pg_policy group by 1),
+g as (select t.relname, r.rolname as grantee, a.privilege_type
+      from t cross join lateral aclexplode(t.relacl) a join pg_roles r on r.oid = a.grantee where r.rolname in ('anon','authenticated'))
 select relname as object, 'RLS not enabled' as violation from t where not rls
 union all select relname, 'RLS not forced' from t where rls and not forced
-union all select t.relname, 'anon has privilege ' || g.privilege_type
-  from t join information_schema.role_table_grants g on g.table_schema='public' and g.table_name=t.relname and g.grantee='anon'
-union all select t.relname, 'authenticated has dangerous privilege ' || g.privilege_type
-  from t join information_schema.role_table_grants g on g.table_schema='public' and g.table_name=t.relname and g.grantee='authenticated'
-  where g.privilege_type in ('TRUNCATE','REFERENCES','TRIGGER')
+union all select g.relname, 'anon has privilege ' || g.privilege_type from g where g.grantee = 'anon'
+union all select g.relname, 'authenticated has dangerous privilege ' || g.privilege_type from g
+  where g.grantee = 'authenticated' and g.privilege_type in ('TRUNCATE','REFERENCES','TRIGGER')
 union all select t.relname, 'authenticated has grants but no RLS policy (exposed table without rules)'
   from t left join pol on pol.polrelid = t.oid
-  where coalesce(pol.n,0) = 0 and exists (select 1 from information_schema.role_table_grants g
-        where g.table_schema='public' and g.table_name=t.relname and g.grantee='authenticated')
+  where coalesce(pol.n,0) = 0 and exists (select 1 from g where g.relname = t.relname and g.grantee = 'authenticated')
 union all select p.proname, 'public function executable by anon'
   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   where n.nspname='public' and has_function_privilege('anon', p.oid, 'execute')

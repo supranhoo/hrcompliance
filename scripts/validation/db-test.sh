@@ -57,6 +57,9 @@ T=$(grep -c '^t$' "${TMPDIR:-/tmp}/jobs_$$.txt"); rm -f "${TMPDIR:-/tmp}/jobs_$$
 [ "$T" = "1" ] && echo "ok   - 20 concurrent job claims: exactly 1 runner" || { echo "FAIL job concurrency: runners=$T"; exit 1; }
 [ "$U" = "40" ] && [ "$M" = "GRC-2026-000040" ] && echo "ok   - 40 concurrent allocations: 40 unique, max $M" || { echo "FAIL concurrency: unique=$U max=$M"; exit 1; }
 
+# DEV live-verification automation: real setup file -> real ci_verifier login -> real runner, with least-privilege and failure-path proofs (own throwaway database).
+PGURL="$BASE" scripts/validation/test-live-verifier.sh
+
 # Synthetic dev samples: load -> engines produce real output -> idempotent re-load -> complete removal (separate throwaway DB).
 DB2="bfcl_sample_$$"; psql "$BASE/postgres" -c "create database $DB2"; trap 'psql "$BASE/postgres" -c "drop database if exists $DB2" >/dev/null; psql "$BASE/postgres" -c "drop database if exists $DB" >/dev/null' EXIT
 URL2="$BASE/$DB2"; Q0() { "$PSQL" -qtA "$URL2" -c "$1"; }; psql "$URL2" -f supabase/tests/00_supabase_shim.sql >/dev/null 2>&1

@@ -1,7 +1,7 @@
 -- LIVE CHECK for migration 0040 (generic attachment foundation). READ-ONLY: one SELECT, changes nothing, safe in any environment.
--- Supabase SQL Editor: new empty tab, paste this ENTIRE file, Run once. Last line is "-- END OF FILE".
+-- Normally run by the workflow "Verify DEV (live, read-only)" (docs/LIVE_VERIFICATION_AUTOMATION.md). By hand: Supabase SQL Editor, new empty tab, paste this ENTIRE file, Run once. Last line is "-- END OF FILE".
 -- EXPECTED: every row PASS (INFO rows are information), last row OVERALL PASS. Also run supabase/tests/live_gate.sql FIRST (expects 40 migrations, 53 tables, 19 views, 25 permissions, 13 numbering rules, audit 0).
--- This script proves the STRUCTURE and the private-storage configuration. Isolation between users and the upload/read round trip are proven by scripts/validation/attachment-smoke-test.js (see docs/ATTACHMENTS.md).
+-- This script proves the STRUCTURE and the private-storage configuration. Isolation between users and the upload/read round trip are proven by the workflow "Verify DEV storage smoke test" (scripts/validation/dev-storage-smoke.mjs; see docs/LIVE_VERIFICATION_AUTOMATION.md).
 -- "Frozen migrations 0001-0039 unchanged" is enforced by the SHA-256 hash-lock in CI (check-frozen-migrations.sh); here the migration history is checked for 40 contiguous versions.
 with
 tbl(t) as (values ('attachment_target'), ('attachment'), ('attachment_version'), ('attachment_access_log')),
@@ -13,10 +13,10 @@ c(n, check_name, ok, info) as (values
  (3, 'row level security is ENABLED and FORCED on all four',
      (select count(*) = 4 and bool_and(c.relrowsecurity and c.relforcerowsecurity) from tbl join pg_class c on c.oid = to_regclass('public.' || tbl.t)), null),
  (4, 'anon has no privilege on any attachment table, view or function',
-     not exists (select 1 from information_schema.role_table_grants g where g.grantee = 'anon' and g.table_schema = 'public' and (g.table_name like 'attachment%' or g.table_name = 'v_attachment'))
+     not exists (select 1 from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p', 'v') and (c.relname like 'attachment%' or c.relname = 'v_attachment') and exists (select 1 from aclexplode(c.relacl) a join pg_roles r on r.oid = a.grantee where r.rolname = 'anon'))
      and not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname like 'attachment_%' and has_function_privilege('anon', p.oid, 'execute')), null),
  (5, 'authenticated cannot INSERT / UPDATE / DELETE / TRUNCATE any attachment table (writes only via the functions)',
-     not exists (select 1 from information_schema.role_table_grants g where g.grantee = 'authenticated' and g.table_schema = 'public' and g.table_name like 'attachment%' and g.privilege_type in ('INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER')), null),
+     not exists (select 1 from pg_class c cross join lateral aclexplode(c.relacl) a join pg_roles r on r.oid = a.grantee where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p') and c.relname like 'attachment%' and r.rolname = 'authenticated' and a.privilege_type in ('INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER')), null),
  (6, 'storage_key and storage_bucket are NOT readable by authenticated (no object enumeration); version_no is',
      not has_column_privilege('authenticated', 'public.attachment_version', 'storage_key', 'select') and not has_column_privilege('authenticated', 'public.attachment_version', 'storage_bucket', 'select')
      and has_column_privilege('authenticated', 'public.attachment_version', 'version_no', 'select'), null),

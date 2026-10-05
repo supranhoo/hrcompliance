@@ -17,3 +17,7 @@ calendar, exceptions and alerts can be exercised in the DEVELOPMENT project befo
 **Always run each script as the complete file in one execution.** Running a highlighted fragment in the SQL editor breaks PL/pgSQL (`syntax error at or near ","` from `select ... into a, b` outside a `DO` block) and loses the session temp table. Paste the whole file into an empty tab.
 
 **Live UAT uses the modular runner** `uat_engine_01_generator.sql` … `uat_engine_08_overall.sql` (each small, independent, DEVELOPMENT-guarded, ends with `-- END OF FILE`). `uat_engine_demo.sql` is the single large script kept for CLI/engineering use; the SQL Editor can truncate it.
+
+
+## Live verification automation (read-only; docs/LIVE_VERIFICATION_AUTOMATION.md)
+`setup_ci_verifier.sql` (one-time, by hand, placeholder password; creates the column-whitelisted read-only login `ci_verifier`), `drop_ci_verifier.sql` (revoke/remove), `live_verifier_role_audit.sql` (re-proves the login is still least-privilege; runs first in every workflow run), `live_attachment_check.sql`, `live_org_masters_inventory.sql`. None of these is ever run automatically except the three read-only checks by the manual GitHub workflow.

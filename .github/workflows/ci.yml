@@ -11,6 +11,10 @@ jobs:
       - run: scripts/validation/check-no-confidential-files.sh && scripts/validation/test-confidential-guard.sh
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
+      # DEV verification automation (no credentials, no network): the storage smoke test is proven against a mock that must FAIL when any protection is removed,
+      # and the workflow wiring checks (triggers, environment, branch, secret allow-lists, no migrations/artifacts/service-role) must reject every loosening.
+      - run: node scripts/validation/test-dev-storage-smoke.mjs
+      - run: scripts/validation/test-verification-workflows.sh
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint

@@ -40,5 +40,5 @@ anon denied everywhere · another user cannot see/authorise/upload/read a pendin
 ## Live verification (owner)
 1. `supabase/tests/live_gate.sql` → 40 migrations, 53 tables, 19 views, 25 permissions, 13 numbering rules, audit 0, OVERALL PASS.
 2. `supabase/dev-samples/live_attachment_check.sql` → every row PASS, OVERALL PASS (structure, RLS, grants, private bucket, storage policies, no public access, `pg_cron` OFF).
-3. Storage smoke test with a synthetic 1×1 PNG: `scripts/validation/attachment-smoke-test.js` — STEP 1 as the uploader (SUPER_ADMIN), STEP 2 as a different user. Expected: all lines PASS (authorised upload → private object → authorised read → unauthorised read denied).
-Only after all three pass is 0040 hash-locked.
+3. Storage smoke test with a synthetic 1×1 PNG and two dedicated synthetic users, now **automated**: workflow *Verify DEV storage smoke test* (`scripts/validation/dev-storage-smoke.mjs`): A reserve → upload → complete → read (checksum equal), then B / anonymous / public URL denied. Items 1–2 are automated by *Verify DEV (live, read-only)*. Setup, secrets and limits: `docs/LIVE_VERIFICATION_AUTOMATION.md`. (`scripts/validation/attachment-smoke-test.js`, the browser-console variant, is kept only as a manual fallback.)
+Only after all three pass on DEV is 0040 hash-locked.

@@ -1,0 +1,39 @@
+name: Verify DEV storage smoke test
+
+# Automated proof for migration 0040 on DEV: User A reserve -> upload -> complete -> read OK (checksum equal), then User B / anonymous / public URL DENIED.
+# Synthetic 1x1 PNG and two dedicated SYNTHETIC test users only. Uses the project URL, the PUBLISHABLE key and the two synthetic logins.
+# It deliberately does NOT reference DEV_DB_PASSWORD or any database credential, and no service-role / secret Supabase key exists anywhere in this repository or workflow.
+# Manual only, DEV only. Leaves one deactivated synthetic attachment row and one ~70-byte private object (0040 allows no delete/update by design).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-dev-storage-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    if: github.ref == 'refs/heads/claude/peaceful-wozniak-gyfjaw'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: dev-verification
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run storage smoke test
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+          SMOKE_USER_A_EMAIL: ${{ vars.SMOKE_USER_A_EMAIL }}
+          SMOKE_USER_A_PASSWORD: ${{ secrets.SMOKE_USER_A_PASSWORD }}
+          SMOKE_USER_B_EMAIL: ${{ vars.SMOKE_USER_B_EMAIL }}
+          SMOKE_USER_B_PASSWORD: ${{ secrets.SMOKE_USER_B_PASSWORD }}
+          DEV_DB_USER: ${{ vars.DEV_DB_USER }}   # public variable (ci_verifier.<project-ref>): only used to confirm the target is the same DEV project
+        run: node scripts/validation/dev-storage-smoke.mjs
